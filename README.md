@@ -10,13 +10,17 @@
 
 ## The problem
 
-![Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections](assets/fixed-vs-structure-aware.png)
-
 Standard chunkers — including LangChain's `RecursiveCharacterTextSplitter` —
 are paragraph-aware but not structure-aware. They don't know that
 "Article 17" starts a new legal section, or that a table header belongs
 with its data rows. The result: chunks that split mid-section, producing
 blurry embeddings and incomplete retrievals.
+
+*Illustration of the same idea:* fixed-size splits (left) cut through sentences; structure-aware splits (right) follow logical blocks.
+
+<p align="center">
+  <img src="assets/fixed-vs-structure-aware.png" alt="Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections" width="160" />
+</p>
 
 Our [LLM-as-judge benchmark](benchmark/README.md) on 11 structured documents
 (GDPR, EU AI Act, CCPA, 8 IETF RFCs) and 58 queries shows:
