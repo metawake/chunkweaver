@@ -79,6 +79,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Preview boundary detection without chunking.",
     )
+    p.add_argument(
+        "--recommend",
+        action="store_true",
+        help="Analyze the document and suggest configuration.",
+    )
     return p
 
 
@@ -109,6 +114,13 @@ def main(argv: Optional[List[str]] = None) -> None:
         boundaries = get_preset(args.preset) + boundaries
 
     text = _read_input(args.file)
+
+    if args.recommend:
+        from chunkweaver.recommend import recommend
+
+        rec = recommend(text)
+        print(rec.report())
+        return
 
     if args.detect_boundaries:
         from chunkweaver.boundaries import detect_boundaries

@@ -260,6 +260,41 @@ chunkweaver file.txt --detect-boundaries --boundaries "^Article\s+\d+"
 
 # Pipe from stdin
 cat document.txt | chunkweaver --size 1024 --preset rfc
+
+# Analyze a document and get configuration recommendations
+chunkweaver --recommend my_document.txt
+```
+
+The `--recommend` flag scans a document for structural signals and suggests
+which preset, detectors, and `target_size` to use — with a ready-to-paste
+Python snippet:
+
+```
+=== chunkweaver recommend ===
+
+Document: 12,340 chars, 380 lines, 45 paragraphs
+Avg paragraph: ~274 chars
+
+--- Preset matching ---
+  legal-eu                8 hits <-- best
+  financial               3 hits
+
+--- Detectors ---
+  HeadingDetector: YES (12 headings found)
+  TableDetector:   YES (2 tables found)
+
+--- Python snippet ---
+from chunkweaver import Chunker
+from chunkweaver.presets import LEGAL_EU
+from chunkweaver.detector_heading import HeadingDetector
+from chunkweaver.detector_table import TableDetector
+
+chunker = Chunker(
+    target_size=1024,
+    overlap=2,
+    boundaries=LEGAL_EU,
+    detectors=[HeadingDetector(), TableDetector()],
+)
 ```
 
 ## Customization cookbook
@@ -556,6 +591,7 @@ chunkweaver/
 ├── boundaries.py          # Regex boundary detection engine
 ├── sentences.py           # Configurable sentence splitting (regex, no NLP)
 ├── presets.py             # 9 domain presets (legal, clinical, chat, etc.)
+├── recommend.py           # Document analysis and config recommendations
 ├── cli.py                 # CLI entry point
 └── integrations/
     ├── langchain.py       # LangChain TextSplitter wrapper
