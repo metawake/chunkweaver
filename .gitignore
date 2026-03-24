@@ -35,9 +35,15 @@ htmlcov/
 # Generated benchmark artifacts
 benchmark/chunks-chunkweaver/
 benchmark/chunks-langchain/
+benchmark/chunks-legal-cw/
+benchmark/chunks-legal-langchain/
+benchmark/corpus-legal/
 benchmarks/output/
 benchmarks/results.json
 runs/
+
+# Experiment data (large files, not for distribution)
+experiments/10k_filings/
 
 # Misc
 codealike.json

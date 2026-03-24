@@ -1,0 +1,104 @@
+{
+  "queries": [
+    {
+      "id": "arc_1",
+      "text": "What are the royalty payment obligations in the AstraZeneca-Arcutis license agreement?",
+      "relevant_docs": ["arcutis_license.txt"]
+    },
+    {
+      "id": "arc_2",
+      "text": "Under what conditions can the Arcutis license agreement be terminated early?",
+      "relevant_docs": ["arcutis_license.txt"]
+    },
+    {
+      "id": "arc_3",
+      "text": "What are the indemnification obligations of each party in the Arcutis license?",
+      "relevant_docs": ["arcutis_license.txt"]
+    },
+    {
+      "id": "arc_4",
+      "text": "What happens to intellectual property rights when the Arcutis license terminates?",
+      "relevant_docs": ["arcutis_license.txt"]
+    },
+    {
+      "id": "az_1",
+      "text": "What data does AstraZeneca license from Tempus under the master services agreement?",
+      "relevant_docs": ["astrazeneca_msa.txt"]
+    },
+    {
+      "id": "az_2",
+      "text": "What are the confidentiality obligations in the AstraZeneca-Tempus MSA?",
+      "relevant_docs": ["astrazeneca_msa.txt"]
+    },
+    {
+      "id": "az_3",
+      "text": "How is intellectual property ownership handled in the AstraZeneca-Tempus agreement?",
+      "relevant_docs": ["astrazeneca_msa.txt"]
+    },
+    {
+      "id": "az_4",
+      "text": "What are the exclusivity provisions in the AstraZeneca-Tempus MSA?",
+      "relevant_docs": ["astrazeneca_msa.txt"]
+    },
+    {
+      "id": "gen_1",
+      "text": "What milestone payments does Sanofi/Genzyme owe Kymera under the collaboration agreement?",
+      "relevant_docs": ["genzyme_license.txt"]
+    },
+    {
+      "id": "gen_2",
+      "text": "How is the joint steering committee structured in the Genzyme-Kymera collaboration?",
+      "relevant_docs": ["genzyme_license.txt"]
+    },
+    {
+      "id": "gen_3",
+      "text": "What are Kymera's obligations regarding manufacturing of licensed products under the Genzyme agreement?",
+      "relevant_docs": ["genzyme_license.txt"]
+    },
+    {
+      "id": "gen_4",
+      "text": "What happens to license grants if the Genzyme-Kymera collaboration is terminated for material breach?",
+      "relevant_docs": ["genzyme_license.txt"]
+    },
+    {
+      "id": "den_1",
+      "text": "What is the scope of the exclusive license granted by Denali to Biogen?",
+      "relevant_docs": ["denali_collab.txt"]
+    },
+    {
+      "id": "den_2",
+      "text": "How are development costs shared between Denali and Biogen?",
+      "relevant_docs": ["denali_collab.txt"]
+    },
+    {
+      "id": "den_3",
+      "text": "What representations and warranties does each party make in the Denali-Biogen agreement?",
+      "relevant_docs": ["denali_collab.txt"]
+    },
+    {
+      "id": "rti_1",
+      "text": "What insurance requirements does RTI impose on subcontractors in the MSA?",
+      "relevant_docs": ["rti_msa_template.txt"]
+    },
+    {
+      "id": "rti_2",
+      "text": "Under what circumstances can RTI terminate a subagreement?",
+      "relevant_docs": ["rti_msa_template.txt"]
+    },
+    {
+      "id": "rti_3",
+      "text": "What are the indemnification obligations in the RTI master service agreement?",
+      "relevant_docs": ["rti_msa_template.txt"]
+    },
+    {
+      "id": "rti_4",
+      "text": "How does RTI handle disputes with suppliers under the MSA?",
+      "relevant_docs": ["rti_msa_template.txt"]
+    },
+    {
+      "id": "cross_1",
+      "text": "How do the confidentiality clauses compare across these contracts regarding duration of obligations?",
+      "relevant_docs": ["arcutis_license.txt", "astrazeneca_msa.txt", "genzyme_license.txt"]
+    }
+  ]
+}

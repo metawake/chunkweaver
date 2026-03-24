@@ -1,0 +1,357 @@
+"""Tests for BoundaryDetector ABC and Chunker integration."""
+
+from __future__ import annotations
+
+from typing import List
+
+import pytest
+
+from chunkweaver import (
+    Chunker,
+    BoundaryDetector,
+    SplitPoint,
+    KeepTogetherRegion,
+    Annotation,
+)
+
+
+# ---------------------------------------------------------------------------
+# Test detectors — concrete implementations for testing
+# ---------------------------------------------------------------------------
+
+
+class FixedSplitDetector(BoundaryDetector):
+    """Splits at lines matching exact strings."""
+
+    def __init__(self, markers: List[str]):
+        self._markers = markers
+
+    def detect(self, text: str) -> List[Annotation]:
+        results: List[Annotation] = []
+        offset = 0
+        for line_no, line in enumerate(text.split("\n")):
+            stripped = line.strip()
+            if stripped in self._markers:
+                results.append(SplitPoint(
+                    position=offset,
+                    line_number=line_no,
+                    label=f"marker: {stripped}",
+                ))
+            offset += len(line) + 1
+        return results
+
+
+class FixedKeepTogetherDetector(BoundaryDetector):
+    """Marks specific char ranges as keep-together."""
+
+    def __init__(self, regions: List[tuple]):
+        self._regions = regions
+
+    def detect(self, text: str) -> List[Annotation]:
+        return [
+            KeepTogetherRegion(
+                start=start,
+                end=end,
+                label=label,
+                max_overshoot=overshoot,
+            )
+            for start, end, label, overshoot in self._regions
+        ]
+
+
+# ---------------------------------------------------------------------------
+# ABC tests
+# ---------------------------------------------------------------------------
+
+
+class TestBoundaryDetectorABC:
+    def test_cannot_instantiate_abc(self):
+        with pytest.raises(TypeError):
+            BoundaryDetector()
+
+    def test_concrete_subclass(self):
+        detector = FixedSplitDetector(["## Heading"])
+        assert isinstance(detector, BoundaryDetector)
+
+    def test_detect_returns_list(self):
+        detector = FixedSplitDetector(["## Heading"])
+        result = detector.detect("line one\n## Heading\nline three")
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert isinstance(result[0], SplitPoint)
+
+
+# ---------------------------------------------------------------------------
+# SplitPoint integration — detectors add split boundaries
+# ---------------------------------------------------------------------------
+
+
+class TestSplitPointIntegration:
+    def test_detector_splits_like_regex(self):
+        text = "Intro paragraph.\n\n## Revenue\n\nRevenue was strong.\n\n## Costs\n\nCosts were low."
+
+        chunker_regex = Chunker(
+            target_size=50,
+            overlap=0,
+            boundaries=[r"^## "],
+            min_size=0,
+        )
+        chunker_detector = Chunker(
+            target_size=50,
+            overlap=0,
+            detectors=[FixedSplitDetector(["## Revenue", "## Costs"])],
+            min_size=0,
+        )
+
+        chunks_regex = chunker_regex.chunk(text)
+        chunks_detector = chunker_detector.chunk(text)
+
+        assert len(chunks_regex) == len(chunks_detector)
+        assert chunks_regex == chunks_detector
+
+    def test_detector_and_regex_combine(self):
+        text = (
+            "PART I\n\nSome intro.\n\n"
+            "SECTION A\n\nContent A.\n\n"
+            "SECTION B\n\nContent B."
+        )
+
+        chunker = Chunker(
+            target_size=40,
+            overlap=0,
+            boundaries=[r"^PART\s+"],
+            detectors=[FixedSplitDetector(["SECTION A", "SECTION B"])],
+            min_size=0,
+        )
+        chunks = chunker.chunk(text)
+
+        starts = [c.split("\n")[0].strip() for c in chunks]
+        assert "PART I" in starts
+        assert "SECTION A" in starts
+        assert "SECTION B" in starts
+
+    def test_detector_split_deduplicates_with_regex(self):
+        """When a detector split point coincides with a regex boundary,
+        it should not create a duplicate split."""
+        text = "PART I\n\nContent.\n\nPART II\n\nMore content."
+
+        chunker = Chunker(
+            target_size=30,
+            overlap=0,
+            boundaries=[r"^PART\s+"],
+            detectors=[FixedSplitDetector(["PART II"])],
+            min_size=0,
+        )
+
+        chunks = chunker.chunk(text)
+        chunk_texts = [c.strip() for c in chunks]
+        assert chunk_texts.count("PART II\n\nMore content.") == 1
+
+    def test_no_detectors_same_as_before(self):
+        text = "Hello world.\n\nSecond paragraph.\n\nThird paragraph."
+
+        c1 = Chunker(target_size=30, overlap=0, min_size=0)
+        c2 = Chunker(target_size=30, overlap=0, min_size=0, detectors=[])
+
+        assert c1.chunk(text) == c2.chunk(text)
+
+
+# ---------------------------------------------------------------------------
+# KeepTogetherRegion integration — detectors prevent splitting
+# ---------------------------------------------------------------------------
+
+
+class TestKeepTogetherRegionIntegration:
+    def _make_table_doc(self) -> str:
+        """A document with a 'table' region in the middle."""
+        return (
+            "Introduction paragraph with context.\n\n"
+            "Revenue  100  200  300\n"
+            "Costs     50   80  120\n"
+            "Profit    50  120  180\n\n"
+            "Conclusion paragraph with analysis."
+        )
+
+    def test_keep_together_prevents_split(self):
+        text = self._make_table_doc()
+
+        # The table region (chars covering the 3 data lines)
+        table_start = text.index("Revenue")
+        table_end = text.index("180") + len("180")
+
+        # Without protection: table might be split
+        chunker_plain = Chunker(target_size=80, overlap=0, min_size=0)
+        chunks_plain = chunker_plain.chunk(text)
+
+        # With protection: table should stay together
+        detector = FixedKeepTogetherDetector([
+            (table_start, table_end, "table: revenue", 2.0),
+        ])
+        chunker_protected = Chunker(
+            target_size=80,
+            overlap=0,
+            min_size=0,
+            detectors=[detector],
+        )
+        chunks_protected = chunker_protected.chunk(text)
+
+        # Find the chunk containing "Revenue" in each
+        table_chunk_plain = [c for c in chunks_plain if "Revenue" in c]
+        table_chunk_protected = [c for c in chunks_protected if "Revenue" in c]
+
+        assert len(table_chunk_protected) >= 1
+        # The protected chunk should contain all three rows
+        combined = table_chunk_protected[0]
+        assert "Revenue" in combined
+        assert "Costs" in combined
+        assert "Profit" in combined
+
+    def test_keep_together_respects_max_overshoot(self):
+        """If a keep-together region exceeds max_overshoot * target_size,
+        it falls back to normal splitting."""
+        lines = [f"Row {i:3d}  {i*100:5d}  {i*200:5d}" for i in range(20)]
+        text = "\n".join(lines)
+
+        detector = FixedKeepTogetherDetector([
+            (0, len(text), "huge table", 1.2),
+        ])
+
+        chunker = Chunker(
+            target_size=100,
+            overlap=0,
+            min_size=0,
+            detectors=[detector],
+        )
+        chunks = chunker.chunk(text)
+
+        # Should still produce multiple chunks because the region is too large
+        assert len(chunks) > 1
+
+    def test_keep_together_with_split_detector(self):
+        """SplitPoint and KeepTogetherRegion from different detectors
+        work together correctly."""
+        text = (
+            "# Intro\n\nSome text.\n\n"
+            "# Table Section\n\n"
+            "A  10  20\n"
+            "B  30  40\n"
+            "C  50  60\n\n"
+            "# Conclusion\n\nFinal words."
+        )
+
+        table_start = text.index("A  10")
+        table_end = text.index("60") + len("60")
+
+        class CombinedDetector(BoundaryDetector):
+            def detect(self, text: str) -> List[Annotation]:
+                results: List[Annotation] = []
+                offset = 0
+                for line_no, line in enumerate(text.split("\n")):
+                    if line.startswith("# "):
+                        results.append(SplitPoint(offset, line_no, line))
+                    offset += len(line) + 1
+                results.append(KeepTogetherRegion(
+                    table_start, table_end, "test table", 2.0
+                ))
+                return results
+
+        chunker = Chunker(
+            target_size=60,
+            overlap=0,
+            min_size=0,
+            detectors=[CombinedDetector()],
+        )
+        chunks = chunker.chunk(text)
+
+        section_starts = [c.strip().split("\n")[0] for c in chunks]
+        assert "# Intro" in section_starts
+        assert "# Table Section" in section_starts
+        assert "# Conclusion" in section_starts
+
+        table_chunks = [c for c in chunks if "A  10" in c]
+        assert len(table_chunks) >= 1
+        assert "C  50  60" in table_chunks[0]
+
+    def test_multiple_keep_together_regions(self):
+        """Multiple keep-together regions in the same document."""
+        text = (
+            "Intro.\n\n"
+            "T1A  1  2\nT1B  3  4\n\n"
+            "Middle paragraph.\n\n"
+            "T2A  5  6\nT2B  7  8\n\n"
+            "Outro."
+        )
+
+        t1_start = text.index("T1A")
+        t1_end = text.index("T1B  3  4") + len("T1B  3  4")
+        t2_start = text.index("T2A")
+        t2_end = text.index("T2B  7  8") + len("T2B  7  8")
+
+        detector = FixedKeepTogetherDetector([
+            (t1_start, t1_end, "table 1", 2.0),
+            (t2_start, t2_end, "table 2", 2.0),
+        ])
+
+        chunker = Chunker(
+            target_size=30,
+            overlap=0,
+            min_size=0,
+            detectors=[detector],
+        )
+        chunks = chunker.chunk(text)
+
+        t1_chunks = [c for c in chunks if "T1A" in c]
+        assert len(t1_chunks) >= 1
+        assert "T1B" in t1_chunks[0]
+
+        t2_chunks = [c for c in chunks if "T2A" in c]
+        assert len(t2_chunks) >= 1
+        assert "T2B" in t2_chunks[0]
+
+
+# ---------------------------------------------------------------------------
+# Edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestDetectorEdgeCases:
+    def test_empty_text(self):
+        detector = FixedSplitDetector(["marker"])
+        chunker = Chunker(target_size=100, detectors=[detector])
+        assert chunker.chunk("") == []
+
+    def test_detector_returns_empty(self):
+        class EmptyDetector(BoundaryDetector):
+            def detect(self, text: str) -> List[Annotation]:
+                return []
+
+        chunker = Chunker(target_size=100, detectors=[EmptyDetector()])
+        chunks = chunker.chunk("Hello world.")
+        assert len(chunks) == 1
+        assert chunks[0] == "Hello world."
+
+    def test_overlap_works_with_detectors(self):
+        text = "First sentence. Second sentence.\n\nTHIRD\n\nFourth sentence."
+
+        chunker = Chunker(
+            target_size=30,
+            overlap=1,
+            overlap_unit="sentence",
+            detectors=[FixedSplitDetector(["THIRD"])],
+            min_size=0,
+        )
+        chunks = chunker.chunk(text)
+        assert any("THIRD" in c for c in chunks)
+
+    def test_metadata_preserved_with_detectors(self):
+        text = "Intro.\n\nMARKER\n\nContent."
+        chunker = Chunker(
+            target_size=30,
+            overlap=0,
+            detectors=[FixedSplitDetector(["MARKER"])],
+            min_size=0,
+        )
+        chunks = chunker.chunk_with_metadata(text)
+        assert all(hasattr(c, "start") for c in chunks)
+        assert all(hasattr(c, "end") for c in chunks)
+        assert all(hasattr(c, "boundary_type") for c in chunks)

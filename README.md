@@ -1,6 +1,6 @@
 # chunkweaver
 
-**Structure-aware text chunking for RAG. Zero dependencies.**
+**The structure-aware chunking layer between your extractor and your vector DB.**
 
 [![PyPI version](https://img.shields.io/pypi/v/chunkweaver.svg)](https://pypi.org/project/chunkweaver/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,15 +8,34 @@
 
 ---
 
+## Where chunkweaver fits
+
+```
+  PDF / DOCX / HTML              Your vector DB
+        │                              ▲
+        ▼                              │
+  ┌───────────┐    ┌──────────────┐    │
+  │ Extractor │───▶│ chunkweaver  │────┘
+  │           │    │              │
+  │ unstructured   │ boundaries   │  Embed + upsert
+  │ marker-pdf     │ detectors    │  into Pinecone,
+  │ docling        │ presets      │  Qdrant, Weaviate,
+  │ pdfminer       │ overlap      │  ChromaDB, etc.
+  └───────────┘    └──────────────┘
+```
+
+Your extractor turns files into text. Your vector DB stores embeddings.
+chunkweaver sits in the middle — splitting that text at structural
+boundaries so each chunk is a coherent unit of meaning, not an arbitrary
+slice of characters.
+
 ## The problem
 
 Standard chunkers — including LangChain's `RecursiveCharacterTextSplitter` —
 are paragraph-aware but not structure-aware. They don't know that
-"Article 17" starts a new legal section, or that a table header belongs
-with its data rows. The result: chunks that split mid-section, producing
-blurry embeddings and incomplete retrievals.
-
-*Illustration of the same idea:* fixed-size splits (left) cut through sentences; structure-aware splits (right) follow logical blocks.
+"Article 17" starts a new legal section, or that a financial table's
+header row belongs with its data. The result: chunks that split
+mid-section, producing blurry embeddings and incomplete retrievals.
 
 <p align="center">
   <img src="assets/fixed-vs-structure-aware.png" alt="Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections" width="320" />
@@ -37,17 +56,21 @@ signal, narrowing the gap. The advantage is clearest on documents with
 explicit section markers. See [benchmark/](benchmark/) for full results,
 methodology, and reproduction steps.
 
-## The fix
+## What chunkweaver does
 
-chunkweaver splits at **structural boundaries you define**, falls back to
-paragraphs/sentences when sections are too large, and overlaps in
-**semantic units** (sentences) instead of characters.
+Two layers of structure-aware splitting:
+
+1. **Regex boundaries** — you tell the chunker where sections start (`^Article \d+`, `^## `, `^Item 1.`)
+2. **Heuristic detectors** — the chunker discovers structure itself (headings by casing/whitespace, tables by numeric patterns)
+
+Both layers work together. Detectors can emit **split points** ("start a new chunk here") or **keep-together regions** ("don't split this table"). When they conflict, keep-together wins.
 
 - **Zero dependencies** — stdlib only, no LangChain/LlamaIndex tax
 - **User-defined boundaries** — regex patterns, not hard-coded heuristics
+- **Heuristic detectors** — `HeadingDetector`, `TableDetector` for semi-structured documents
 - **Semantic overlap** — sentences, not characters
 - **Full metadata** — offsets, boundary types, overlap tracking
-- **Drop-in LangChain replacement** — optional integration
+- **Integrations** — LangChain drop-in; LlamaIndex and Unstructured planned
 
 ## Install
 
@@ -300,10 +323,12 @@ chunks = chunker.chunk(note)
 # Each clinical section stays intact
 ```
 
-### Financial tables (keep headers with data)
+### Financial documents (tables + headings)
 
-The biggest problem with table chunking: headers get separated from values.
-Use `keep_together` to glue table headers to their data rows:
+The biggest problems with financial document chunking: tables get split
+in half, and section headings get separated from their content.
+
+**Option A — regex `keep_together`** (simple, for known table markers):
 
 ```python
 from chunkweaver import Chunker
@@ -311,26 +336,29 @@ from chunkweaver.presets import FINANCIAL, FINANCIAL_TABLE
 
 chunker = Chunker(
     target_size=1024,
-    overlap=0,
     boundaries=FINANCIAL + FINANCIAL_TABLE,
-    keep_together=[r"^TABLE\s+\d+"],  # TABLE header stays with its rows
-    min_size=0,
+    keep_together=[r"^TABLE\s+\d+"],
 )
-
-report = """Item 1. Business
-The Company operates in financial services.
-
-TABLE 1
-Revenue | 2023 | 2024
-Product A | 100M | 120M
-Product B | 50M | 60M
-
-Item 2. Properties
-Headquarters located in New York."""
-
-chunks = chunker.chunk(report)
-# TABLE 1 + its rows stay in one chunk
 ```
+
+**Option B — heuristic detectors** (discovers structure automatically):
+
+```python
+from chunkweaver import Chunker
+from chunkweaver.detector_heading import HeadingDetector
+from chunkweaver.detector_table import TableDetector
+from chunkweaver.presets import FINANCIAL
+
+chunker = Chunker(
+    target_size=1024,
+    boundaries=FINANCIAL,
+    detectors=[HeadingDetector(), TableDetector()],
+)
+```
+
+Option B finds headings by casing/whitespace patterns and tables by
+numeric run detection — no regex tuning needed. On SEC 10-K filings,
+`TableDetector` keeps 80% of financial tables intact vs. 21% without it.
 
 ### US contracts & legal filings
 
@@ -405,37 +433,112 @@ chunkweaver doc.txt --detect-boundaries --boundaries "^Article\s+\d+"
 
 ## How it works
 
-1. **Detect boundaries** — scan each line against your regex patterns
-2. **Split at boundaries** — create one segment per structural section
-3. **Sub-split oversized segments** — break large sections at paragraph → sentence → word boundaries
-4. **Merge undersized segments** — combine tiny segments (like standalone headings) with their body text
-5. **Add overlap** — prepend the last N sentences/paragraphs/chars from the previous chunk
-6. **Return** — chunks with full metadata (offsets, boundary type, overlap tracking)
+1. **Run detectors** — heuristic detectors analyze the full text and produce split points + keep-together regions
+2. **Detect boundaries** — scan each line against your regex patterns, merge with detector split points, suppress splits inside keep-together regions
+3. **Split at boundaries** — create one segment per structural section
+4. **Isolate protected regions** — carve keep-together regions (tables) into their own segments
+5. **Sub-split oversized segments** — break large sections at paragraph → sentence → word boundaries; allow protected regions to overshoot `target_size`
+6. **Merge undersized segments** — combine tiny segments (like standalone headings) with their body text
+7. **Add overlap** — prepend the last N sentences/paragraphs/chars from the previous chunk
+8. **Return** — chunks with full metadata (offsets, boundary type, overlap tracking)
+
+## Heuristic detectors
+
+For documents without clean regex-matchable section markers — SEC filings,
+scanned contracts, extracted PDFs — chunkweaver provides heuristic
+detectors that discover structure from text patterns.
+
+### HeadingDetector
+
+Scores each line on multiple signals (casing, length, whitespace context,
+known prefixes) and emits split points at probable headings.
+
+```python
+from chunkweaver import Chunker
+from chunkweaver.detector_heading import HeadingDetector
+from chunkweaver.presets import FINANCIAL
+
+chunker = Chunker(
+    target_size=1024,
+    boundaries=FINANCIAL,
+    detectors=[HeadingDetector(min_score=4.0)],
+)
+```
+
+Works well on documents with Title Case or ALL CAPS headings — SEC
+filings, legal contracts, government reports, technical manuals.
+
+### TableDetector
+
+Identifies runs of numeric data lines, extends backward to include
+column headers, and marks them as keep-together regions. The chunker
+will not split inside a protected table (allowing up to 1.5x
+`target_size` overshoot).
+
+```python
+from chunkweaver import Chunker
+from chunkweaver.detector_table import TableDetector
+from chunkweaver.presets import FINANCIAL
+
+chunker = Chunker(
+    target_size=1024,
+    boundaries=FINANCIAL,
+    detectors=[TableDetector()],
+)
+```
+
+On SEC 10-K filings, TableDetector keeps **80% of financial tables
+intact** (vs. 21% without it).
+
+### Custom detectors
+
+Implement the `BoundaryDetector` ABC to add your own structure
+detection:
+
+```python
+from chunkweaver import BoundaryDetector, SplitPoint, KeepTogetherRegion
+
+class MyDetector(BoundaryDetector):
+    def detect(self, text):
+        results = []
+        # Emit SplitPoint where you want chunk breaks
+        # Emit KeepTogetherRegion for ranges that must stay whole
+        return results
+
+chunker = Chunker(
+    target_size=1024,
+    detectors=[MyDetector()],
+)
+```
 
 ## Architecture
 
 ```
 chunkweaver/
-├── __init__.py          # Public API: Chunker, Chunk, sentence patterns
-├── chunker.py           # Core algorithm + keep_together logic
-├── models.py            # Chunk dataclass
-├── boundaries.py        # Boundary detection engine
-├── sentences.py         # Configurable sentence splitting (regex, no NLP)
-├── presets.py           # 9 domain presets (legal, clinical, chat, etc.)
-├── cli.py               # CLI entry point
+├── __init__.py            # Public API: Chunker, Chunk, detectors, sentence patterns
+├── chunker.py             # Core algorithm + detector integration
+├── detectors.py           # BoundaryDetector ABC, SplitPoint, KeepTogetherRegion
+├── detector_heading.py    # HeadingDetector — heuristic heading detection
+├── detector_table.py      # TableDetector — financial table keep-together
+├── models.py              # Chunk dataclass
+├── boundaries.py          # Regex boundary detection engine
+├── sentences.py           # Configurable sentence splitting (regex, no NLP)
+├── presets.py             # 9 domain presets (legal, clinical, chat, etc.)
+├── cli.py                 # CLI entry point
 └── integrations/
-    └── langchain.py     # LangChain TextSplitter wrapper
+    └── langchain.py       # LangChain TextSplitter wrapper
 ```
 
 **Design principles:**
 - Each module has a single responsibility
 - No deeply nested conditionals — small, testable functions
 - All decisions are logged/exposed via chunk metadata
-- Zero dependencies for core; optional extras for CLI and LangChain
+- Zero dependencies for core; optional extras for CLI and integrations
+- Detectors are composable — stack any combination without conflicts
 
 ## API reference
 
-### `Chunker(target_size, overlap, overlap_unit, boundaries, fallback, min_size, sentence_pattern, keep_together)`
+### `Chunker(target_size, overlap, overlap_unit, boundaries, fallback, min_size, sentence_pattern, keep_together, detectors)`
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -447,6 +550,7 @@ chunkweaver/
 | `min_size` | `int` | `200` | Minimum chunk size (merge smaller segments) |
 | `sentence_pattern` | `str \| Pattern \| None` | `None` | Custom regex for sentence detection (default: English) |
 | `keep_together` | `list[str] \| None` | `None` | Patterns for lines that must stay with next segment |
+| `detectors` | `list[BoundaryDetector] \| None` | `None` | Heuristic detectors for structure discovery |
 
 ### `Chunker.chunk(text) → list[str]`
 

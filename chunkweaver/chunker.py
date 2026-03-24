@@ -6,6 +6,12 @@ import re
 from typing import Callable, List, Optional, Pattern, Sequence, Tuple, Union
 
 from chunkweaver.boundaries import BoundaryMatch, detect_boundaries, split_at_boundaries
+from chunkweaver.detectors import (
+    Annotation,
+    BoundaryDetector,
+    KeepTogetherRegion,
+    SplitPoint,
+)
 from chunkweaver.models import Chunk
 from chunkweaver.sentences import last_n_sentences, split_sentences
 
@@ -39,6 +45,11 @@ class Chunker:
                        field labels, or any line that is meaningless alone.
                        When a segment starts with a matching line and is
                        below ``target_size``, it won't be split away.
+        detectors: Heuristic ``BoundaryDetector`` instances. Their
+                   ``SplitPoint`` annotations are merged with regex
+                   boundaries; their ``KeepTogetherRegion`` annotations
+                   prevent splitting inside protected ranges (allowing
+                   overshoot up to each region's ``max_overshoot`` ratio).
     """
 
     def __init__(
@@ -51,6 +62,7 @@ class Chunker:
         min_size: int = 200,
         sentence_pattern: Union[str, Pattern[str], None] = None,
         keep_together: Optional[Sequence[str]] = None,
+        detectors: Optional[Sequence[BoundaryDetector]] = None,
     ) -> None:
         if target_size < 1:
             raise ValueError("target_size must be >= 1")
@@ -85,6 +97,8 @@ class Chunker:
         if keep_together:
             self._keep_together = [re.compile(p) for p in keep_together]
 
+        self._detectors: List[BoundaryDetector] = list(detectors) if detectors else []
+
     def chunk(self, text: str) -> List[str]:
         """Split *text* into chunks, returning a list of strings."""
         return [c.text for c in self.chunk_with_metadata(text)]
@@ -94,20 +108,73 @@ class Chunker:
         if not text or not text.strip():
             return []
 
-        raw_segments = self._create_segments(text)
+        extra_boundaries, keep_regions = self._run_detectors(text)
+        raw_segments = self._create_segments(text, extra_boundaries, keep_regions)
         merged = self._merge_small_segments(raw_segments, text)
         merged = self._apply_keep_together(merged, text)
-        subsplit = self._subsplit_large_segments(merged)
+        subsplit = self._subsplit_large_segments(merged, keep_regions)
         chunks = self._add_overlap(subsplit)
         return chunks
+
+    # ------------------------------------------------------------------
+    # Detector integration
+    # ------------------------------------------------------------------
+
+    def _run_detectors(
+        self, text: str
+    ) -> Tuple[List[BoundaryMatch], List[KeepTogetherRegion]]:
+        """Run all detectors and partition results into split points
+        and keep-together regions."""
+        extra_boundaries: List[BoundaryMatch] = []
+        keep_regions: List[KeepTogetherRegion] = []
+
+        for detector in self._detectors:
+            for annotation in detector.detect(text):
+                if isinstance(annotation, SplitPoint):
+                    extra_boundaries.append(BoundaryMatch(
+                        position=annotation.position,
+                        line_number=annotation.line_number,
+                        pattern=f"[detector:{annotation.label}]",
+                        matched_text=annotation.label,
+                    ))
+                elif isinstance(annotation, KeepTogetherRegion):
+                    keep_regions.append(annotation)
+
+        extra_boundaries.sort(key=lambda b: b.position)
+        keep_regions.sort(key=lambda r: r.start)
+        return extra_boundaries, keep_regions
 
     # ------------------------------------------------------------------
     # Step 1 & 2: detect boundaries and split
     # ------------------------------------------------------------------
 
-    def _create_segments(self, text: str) -> List[Tuple[str, str, int]]:
-        """Return ``(segment_text, boundary_type, start_offset)`` triples."""
+    def _create_segments(
+        self,
+        text: str,
+        extra_boundaries: Optional[List[BoundaryMatch]] = None,
+        keep_regions: Optional[List[KeepTogetherRegion]] = None,
+    ) -> List[Tuple[str, str, int]]:
+        """Return ``(segment_text, boundary_type, start_offset)`` triples.
+
+        Split points that fall inside a keep-together region are
+        suppressed so that protected regions are not prematurely cut.
+        """
         boundary_matches = detect_boundaries(text, self.boundaries)
+
+        if extra_boundaries:
+            seen = {b.position for b in boundary_matches}
+            for eb in extra_boundaries:
+                if eb.position not in seen:
+                    boundary_matches.append(eb)
+                    seen.add(eb.position)
+            boundary_matches.sort(key=lambda b: b.position)
+
+        if keep_regions:
+            boundary_matches = [
+                b for b in boundary_matches
+                if not any(r.start < b.position < r.end for r in keep_regions)
+            ]
+
         raw_pairs = split_at_boundaries(text, boundary_matches)
 
         segments: List[Tuple[str, str, int]] = []
@@ -189,14 +256,39 @@ class Chunker:
     # ------------------------------------------------------------------
 
     def _subsplit_large_segments(
-        self, segments: List[Tuple[str, str, int]]
+        self,
+        segments: List[Tuple[str, str, int]],
+        keep_regions: Optional[List[KeepTogetherRegion]] = None,
     ) -> List[Tuple[str, str, int]]:
-        """Break segments exceeding *target_size* using the fallback strategy."""
+        """Break segments exceeding *target_size* using the fallback strategy.
+
+        When *keep_regions* are provided, the method first isolates
+        protected regions into their own segments.  Isolated regions
+        that fit within ``max_overshoot * target_size`` are emitted
+        whole; larger ones fall back to normal splitting.
+        """
+        regions = keep_regions or []
+
+        if regions:
+            segments = self._isolate_keep_regions(segments, regions)
+
         result: List[Tuple[str, str, int]] = []
+
         for seg_text, seg_type, seg_start in segments:
             if len(seg_text) <= self.target_size:
                 result.append((seg_text, seg_type, seg_start))
                 continue
+
+            # Keep-together segments get overshoot allowance
+            if seg_type == "keep_together":
+                region = self._find_covering_region(
+                    seg_start, seg_start + len(seg_text), regions
+                )
+                if region:
+                    limit = int(self.target_size * region.max_overshoot)
+                    if len(seg_text) <= limit:
+                        result.append((seg_text, "section", seg_start))
+                        continue
 
             sub_parts = self._split_by_fallback(seg_text)
             accumulated = ""
@@ -218,6 +310,66 @@ class Chunker:
                     result.append((accumulated, self.fallback, acc_start))
 
         return result
+
+    def _isolate_keep_regions(
+        self,
+        segments: List[Tuple[str, str, int]],
+        regions: List[KeepTogetherRegion],
+    ) -> List[Tuple[str, str, int]]:
+        """Carve keep-together regions out of segments so they become
+        their own segment entries, preventing the subsplit loop from
+        splitting inside them."""
+        result: List[Tuple[str, str, int]] = []
+
+        for seg_text, seg_type, seg_start in segments:
+            seg_end = seg_start + len(seg_text)
+
+            overlapping = sorted(
+                (r for r in regions if r.start < seg_end and r.end > seg_start),
+                key=lambda r: r.start,
+            )
+
+            if not overlapping:
+                result.append((seg_text, seg_type, seg_start))
+                continue
+
+            pos = seg_start
+            for region in overlapping:
+                r_start = max(region.start, seg_start)
+                r_end = min(region.end, seg_end)
+
+                if r_start > pos:
+                    before = seg_text[pos - seg_start : r_start - seg_start]
+                    if before.strip():
+                        result.append((before, seg_type, pos))
+
+                region_text = seg_text[r_start - seg_start : r_end - seg_start]
+                if region_text.strip():
+                    result.append((region_text, "keep_together", r_start))
+
+                pos = r_end
+
+            if pos < seg_end:
+                after = seg_text[pos - seg_start :]
+                if after.strip():
+                    result.append((after, seg_type, pos))
+
+        return result
+
+    @staticmethod
+    def _find_covering_region(
+        start: int,
+        end: int,
+        regions: List[KeepTogetherRegion],
+    ) -> Optional[KeepTogetherRegion]:
+        """Return the keep-together region that covers ``[start, end)``."""
+        for r in regions:
+            if r.start <= start and r.end >= end:
+                return r
+        for r in regions:
+            if r.start < end and r.end > start:
+                return r
+        return None
 
     def _split_by_fallback(self, text: str) -> List[str]:
         """Split text using the configured fallback hierarchy."""

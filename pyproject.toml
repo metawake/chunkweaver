@@ -1,6 +1,6 @@
 [project]
 name = "chunkweaver"
-version = "0.1.0"
+version = "0.2.0"
 description = "Structure-aware text chunking for RAG. Zero dependencies."
 readme = "README.md"
 license = {text = "MIT"}
