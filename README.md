@@ -10,6 +10,8 @@
 
 ## The problem
 
+![Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections](assets/fixed-vs-structure-aware.png)
+
 Standard chunkers — including LangChain's `RecursiveCharacterTextSplitter` —
 are paragraph-aware but not structure-aware. They don't know that
 "Article 17" starts a new legal section, or that a table header belongs
