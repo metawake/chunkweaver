@@ -1,6 +1,6 @@
 [project]
 name = "chunkweaver"
-version = "0.2.0"
+version = "0.2.1"
 description = "Structure-aware text chunking for RAG. Zero dependencies."
 readme = "README.md"
 license = {text = "MIT"}
@@ -28,9 +28,10 @@ Issues = "https://github.com/metawake/chunkweaver/issues"
 [project.optional-dependencies]
 cli = ["click>=8.0"]
 langchain = ["langchain-text-splitters>=0.2"]
+llamaindex = ["llama-index-core>=0.11"]
 dev = ["pytest>=7.0", "pytest-cov"]
 benchmark = ["sentence-transformers>=3.0,<4", "numpy>=1.24,<2"]
-all = ["click>=8.0", "langchain-text-splitters>=0.2"]
+all = ["click>=8.0", "langchain-text-splitters>=0.2", "llama-index-core>=0.11"]
 
 [project.scripts]
 chunkweaver = "chunkweaver.cli:main"

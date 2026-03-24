@@ -70,7 +70,7 @@ Both layers work together. Detectors can emit **split points** ("start a new chu
 - **Heuristic detectors** — `HeadingDetector`, `TableDetector` for semi-structured documents
 - **Semantic overlap** — sentences, not characters
 - **Full metadata** — offsets, boundary types, overlap tracking
-- **Integrations** — LangChain drop-in; LlamaIndex and Unstructured planned
+- **Integrations** — LangChain and LlamaIndex drop-ins; Unstructured planned
 
 ## Install
 
@@ -82,8 +82,9 @@ Extras:
 
 ```bash
 pip install chunkweaver[cli]        # CLI with click
-pip install chunkweaver[langchain]  # LangChain TextSplitter integration
-pip install chunkweaver[dev]        # pytest + coverage
+pip install chunkweaver[langchain]   # LangChain TextSplitter integration
+pip install chunkweaver[llamaindex]  # LlamaIndex NodeParser integration
+pip install chunkweaver[dev]         # pytest + coverage
 ```
 
 ## Quick start
@@ -207,6 +208,37 @@ docs = splitter.create_documents([text])
 ```
 
 Requires: `pip install chunkweaver[langchain]`
+
+## LlamaIndex integration
+
+Drop-in `NodeParser` for LlamaIndex ingestion pipelines:
+
+```python
+from chunkweaver.integrations.llamaindex import ChunkWeaverNodeParser
+from chunkweaver.presets import LEGAL_EU
+
+parser = ChunkWeaverNodeParser(
+    target_size=1024,
+    boundaries=LEGAL_EU,
+    overlap=2,
+)
+
+# Works with LlamaIndex document loaders and ingestion pipelines
+nodes = parser.get_nodes_from_documents(documents)
+```
+
+Supports all chunkweaver features including detectors:
+
+```python
+from chunkweaver.detector_heading import HeadingDetector
+
+parser = ChunkWeaverNodeParser(
+    target_size=1024,
+    detectors=[HeadingDetector()],
+)
+```
+
+Requires: `pip install chunkweaver[llamaindex]`
 
 ## CLI
 
@@ -526,7 +558,8 @@ chunkweaver/
 ├── presets.py             # 9 domain presets (legal, clinical, chat, etc.)
 ├── cli.py                 # CLI entry point
 └── integrations/
-    └── langchain.py       # LangChain TextSplitter wrapper
+    ├── langchain.py       # LangChain TextSplitter wrapper
+    └── llamaindex.py      # LlamaIndex NodeParser wrapper
 ```
 
 **Design principles:**
