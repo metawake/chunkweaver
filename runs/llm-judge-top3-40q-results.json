@@ -1,0 +1,1515 @@
+{
+  "experiment": "llm-as-judge-answer-sufficiency",
+  "model": "gpt-4o-mini",
+  "top_k": 3,
+  "num_queries": 40,
+  "total_judge_calls": 240,
+  "collections": {
+    "chunkweaver": "bench-chunkweaver",
+    "naive": "bench-naive"
+  },
+  "summary": {
+    "cw_scores": {
+      "full": 15,
+      "partial": 73,
+      "insufficient": 32,
+      "error": 0
+    },
+    "naive_scores": {
+      "full": 3,
+      "partial": 72,
+      "insufficient": 45,
+      "error": 0
+    },
+    "pair_wins_cw": 38,
+    "pair_wins_naive": 16,
+    "pair_ties": 66,
+    "pair_p_value": 0.003838265880326097,
+    "query_wins_cw": 11,
+    "query_wins_naive": 2,
+    "query_ties": 27,
+    "query_p_value": 0.0224609375
+  },
+  "per_query": [
+    {
+      "query_id": "jwt_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the existence of registered claim names but does not list them."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk mentions the existence of a registry for JWT Claim Names but does not provide any specific claim names."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not list the specific registered claim names in a JSON Web Token."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide the actual registered claim names, only mentions their existence."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions that there are Registered Claim Names but does not provide the actual names or details about them."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk only provides a table of contents and does not include any details about the registered claim names in a JSON Web Token."
+        }
+      ]
+    },
+    {
+      "query_id": "jwt_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk only describes the creation of a JWT and does not provide any information on how to validate it."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk only includes a JWT and a section header without any details on how to validate a JWT."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides a basic overview of how to validate a JWT but lacks detailed steps or specific criteria for validation."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some information about determining the type of JWT but does not fully explain the validation process."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions steps for validating a JWT but does not provide the complete details or specific steps involved in the validation process."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk only describes how to create a JWT and does not provide any information on how to validate it."
+        }
+      ]
+    },
+    {
+      "query_id": "jwt_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains the JWE representation and mentions encryption but does not explicitly compare it to JWS or detail the differences."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain the differences between JWS and JWE serialization of a JWT."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions JWS and JWE but does not explain the differences between them."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions JWS and JWE but does not explain the specific differences between their serializations."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain the differences between JWS and JWE serialization of a JWT."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain the differences between JWS and JWE serialization of a JWT."
+        }
+      ]
+    },
+    {
+      "query_id": "jwt_4",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk provides a clear definition of the 'exp' claim and explains when it should be checked."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention the 'exp' claim or when it should be checked."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides the claim name and description for 'exp' but does not explain when it should be checked."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains what the 'exp' claim is but does not specify when it should be checked."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk explains the 'exp' claim and when it should be checked, but it does not define what the 'exp' claim is."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides the claim name and description for 'exp' but does not explain when it should be checked."
+        }
+      ]
+    },
+    {
+      "query_id": "jwt_5",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not address security considerations related to token replay for JSON Web Tokens."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not address security considerations related to token replay for JSON Web Tokens."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not address token replay or any specific security considerations related to JSON Web Tokens."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any information regarding security considerations or token replay related to JSON Web Tokens."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not address token replay or any related security considerations for JSON Web Tokens."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not address security considerations or token replay specifically."
+        }
+      ]
+    },
+    {
+      "query_id": "oauth_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the Authorization Code Grant but does not list all four grant types defined in the OAuth 2.0 framework."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions that there are four grant types but does not specify what they are."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention the four grant types defined in the OAuth 2.0 authorization framework."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk lists all four grant types defined in the OAuth 2.0 authorization framework."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any of the four grant types defined in the OAuth 2.0 authorization framework."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any of the four grant types defined in the OAuth 2.0 authorization framework."
+        }
+      ]
+    },
+    {
+      "query_id": "oauth_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides an overview of the authorization code grant flow but lacks details on the complete process, including the exchange of the authorization code for an access token and the role of the resource server."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides an overview of the authorization code grant type but lacks detailed steps or explanations of how the flow works."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides an overview of the initial steps in the authorization code grant flow but lacks details on the complete process and subsequent steps."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the authorization code grant but does not provide details on how the flow works."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides an overview of the authorization code flow but does not detail all the steps or explain how the flow works comprehensively."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any information about the authorization code grant flow in OAuth 2.0."
+        }
+      ]
+    },
+    {
+      "query_id": "oauth_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk provides a clear definition of a refresh token and explains its use in obtaining new access tokens."
+        },
+        {
+          "rank": 1,
+          "rating": "full",
+          "reason": "The chunk provides a clear definition of a refresh token and explains how it is used to obtain new access tokens."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions the issuance of refresh tokens but does not explain what a refresh token is or how it is specifically used to obtain new access tokens."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains what a refresh token is and its role in obtaining new access tokens, but it lacks a complete definition of a refresh token."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk explains what a refresh token is and its purpose but does not detail how it is used to obtain new access tokens."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides a definition of a refresh token but does not explain how it is used to obtain new access tokens."
+        }
+      ]
+    },
+    {
+      "query_id": "oauth_4",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some security considerations regarding redirect URI registration but does not cover all aspects of OAuth 2.0 security for redirect URIs."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions the requirement for redirect URIs but lacks detailed security considerations related to them."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk discusses risks associated with open redirectors but does not provide a comprehensive overview of all security considerations specified by OAuth 2.0 for redirect URIs."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions a security concern related to redirect URIs but does not provide a comprehensive overview of all security considerations specified by OAuth 2.0."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any specific security considerations related to redirect URIs in OAuth 2.0."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any information about security considerations for redirect URIs in OAuth 2.0."
+        }
+      ]
+    },
+    {
+      "query_id": "oauth_5",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk only describes the resource owner password grant type and does not provide any information about the client credentials grant type."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk only describes the resource owner password credentials grant type and does not provide any information about the client credentials grant type."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides information about the resource owner password grant but does not explain the client credentials grant type or how the two differ."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk only discusses the resource owner password credentials grant type and does not provide any information about the client credentials grant type."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk discusses the resource owner password grant but does not provide a comparison with the client credentials grant type."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the client credentials grant type but does not explain how it differs from the resource owner password grant."
+        }
+      ]
+    },
+    {
+      "query_id": "tls13_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain what the TLS 1.3 handshake protocol is or how it achieves fewer round trips."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk describes the TLS handshake and its purpose but does not explain how TLS 1.3 achieves fewer round trips."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk describes the TLS handshake steps but does not explain how TLS 1.3 achieves fewer round trips."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk describes the TLS handshake steps but does not explain how TLS 1.3 achieves fewer round trips."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain what the TLS 1.3 handshake protocol is or how it achieves fewer round trips."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides an overview of the TLS handshake protocol but does not explain how it achieves fewer round trips."
+        }
+      ]
+    },
+    {
+      "query_id": "tls13_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide specific information about the cipher suites supported in TLS 1.3 or those removed from TLS 1.2."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not specify which cipher suites are supported in TLS 1.3 or which were removed from TLS 1.2."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any specific information about the cipher suites supported in TLS 1.3 or those removed from TLS 1.2."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions that TLS 1.3 supports only AEAD algorithms and that legacy algorithms were removed, but it does not specify which cipher suites are supported or explicitly list those removed from TLS 1.2."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions that TLS 1.3 uses a different definition for cipher suites and that they cannot be used with TLS 1.2, but it does not list the specific cipher suites supported in TLS 1.3 or those removed from TLS 1.2."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any information about the cipher suites supported in TLS 1.3 or those removed from TLS 1.2."
+        }
+      ]
+    },
+    {
+      "query_id": "tls13_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk discusses the replay risks of 0-RTT data but does not explain how 0-RTT early data works in TLS 1.3."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some information about 0-RTT data and its replay risks but lacks a detailed explanation of how 0-RTT early data works."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk discusses the replay risks associated with 0-RTT data but does not explain how 0-RTT early data works in TLS 1.3."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk discusses the risks and requirements for using 0-RTT data but does not explain how 0-RTT early data works in TLS 1.3."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk discusses the precautions for using 0-RTT in TLS 1.3 but does not explain how 0-RTT early data works or detail its replay risks."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some information about 0-RTT data and its protections but does not fully explain how it works or detail the replay risks."
+        }
+      ]
+    },
+    {
+      "query_id": "tls13_4",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions DHE cipher suites for Perfect Forward Secrecy but does not provide a complete overview of all key exchange mechanisms used in TLS 1.3."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention the specific key exchange mechanisms used in TLS 1.3 for forward secrecy."
+        },
+        {
+          "rank": 2,
+          "rating": "full",
+          "reason": "The chunk clearly explains that TLS 1.3 uses (EC)DHE key exchange for forward secrecy and details how it is authenticated."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the use of (EC)DHE key exchange for forward secrecy but does not provide a complete overview of all key exchange mechanisms in TLS 1.3."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any specific key exchange mechanisms used in TLS 1.3 for forward secrecy."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any specific key exchange mechanisms used in TLS 1.3 for forward secrecy."
+        }
+      ]
+    },
+    {
+      "query_id": "tls12_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk provides a comprehensive overview of the TLS record protocol, including its functions, data handling, and content types."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the record protocol but lacks a comprehensive explanation of its role and functionality in TLS 1.2."
+        },
+        {
+          "rank": 2,
+          "rating": "full",
+          "reason": "The chunk provides a comprehensive overview of the Record Protocol in TLS 1.2, detailing its functions and the protocols that utilize it."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the TLS Record Protocol as a layer in TLS but does not provide details about its functions or characteristics."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides a basic overview of the TLS record protocol but lacks detailed information about its specific functions and mechanisms."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any specific information about the record protocol layer in TLS 1.2."
+        }
+      ]
+    },
+    {
+      "query_id": "tls12_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk describes the handshake process and mentions the exchange of cryptographic parameters but does not detail how cipher suite parameters are specifically exchanged."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions the TLS handshake protocol and its role in negotiating cryptographic algorithms, but it does not provide specific details on how cipher suite parameters are exchanged."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions cryptographic parameters but does not detail how the cipher suite parameters are exchanged during the TLS 1.2 handshake."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk describes the TLS handshake protocol and its purpose but does not specifically detail how cipher suite parameters are exchanged."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions the exchange of cryptographic parameters but does not specify how cipher suite parameters are exchanged."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions the establishment of cryptographic parameters during the key exchange phase but lacks specific details on how cipher suite parameters are exchanged."
+        }
+      ]
+    },
+    {
+      "query_id": "tls12_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk clearly states that TLS 1.2 uses a PRF based on HMAC with the SHA-256 hash function for key derivation."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions the use of the TLS PRF but does not specify which pseudorandom function is used in TLS 1.2."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions that TLS 1.2 uses HKDF for key derivation but does not explicitly state that it replaces the previous PRF."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions that TLS 1.2 uses a PRF based on HMAC with SHA-256 but does not explicitly state the name of the PRF."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk describes the PRF used in TLS 1.2 but does not specify which hash function is used."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention the specific pseudorandom function used in TLS 1.2 for key derivation."
+        }
+      ]
+    },
+    {
+      "query_id": "http11_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk identifies some safe HTTP methods but does not list all methods defined in RFC 2616."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any HTTP methods defined in RFC 2616 or which methods are considered safe."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any HTTP methods defined in RFC 2616 or which methods are considered safe."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any HTTP methods defined in RFC 2616 or which methods are considered safe."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any HTTP methods defined in RFC 2616 or which methods are considered safe."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk identifies some HTTP methods defined in RFC 2616 and mentions which are safe, but it does not provide a complete list of all methods defined in the RFC."
+        }
+      ]
+    },
+    {
+      "query_id": "http11_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions content negotiation and request header fields but does not explain how Accept headers specifically work within that context."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions the Accept header and its role in content negotiation but does not explain how the Accept header specifically works."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions the Accept header and related concepts but does not explain how content negotiation specifically works with Accept headers."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk introduces the concept of content negotiation but does not explain how Accept headers specifically work within that context."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk explains the concept of content negotiation and mentions proactive and reactive patterns, but it does not specifically address how Accept headers are used in this process."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions content negotiation and types but does not explain how Accept headers specifically work in this context."
+        }
+      ]
+    },
+    {
+      "query_id": "http11_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk discusses caching mechanisms in HTTP/1.1 but does not specify the mechanisms defined for proxy servers."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide specific details about the caching mechanisms defined in HTTP/1.1 for proxy servers."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any specific caching mechanisms defined by HTTP/1.1 for proxy servers."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide specific details about the caching mechanisms defined for proxy servers in HTTP/1.1."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any specific caching mechanisms defined for proxy servers in HTTP/1.1."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any specific caching mechanisms defined for proxy servers in HTTP/1.1."
+        }
+      ]
+    },
+    {
+      "query_id": "http11_4",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides a basic explanation of chunked transfer coding but lacks details on how it works in practice."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some details about the rules and requirements for using chunked transfer encoding but does not explain how it actually works in practice."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain how chunked transfer encoding works, only that it must be supported and decoded."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides a basic explanation of chunked transfer coding but lacks details on how it specifically works in HTTP/1.1."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain how chunked transfer encoding works, only stating that applications must decode it."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some details about the chunked transfer encoding process but lacks a complete explanation of how it works in HTTP/1.1."
+        }
+      ]
+    },
+    {
+      "query_id": "httpsem_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions 301 and 307 redirect status codes but does not explain their differences."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides information about the 307 redirect status code but does not mention the 301 redirect status code."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention the specific differences between 301 and 307 redirect status codes."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the 301 and 307 status codes but does not explain their differences."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention 301 or 307 redirect status codes at all."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions the 307 redirect but does not explain the 301 redirect or the differences between the two."
+        }
+      ]
+    },
+    {
+      "query_id": "httpsem_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk clearly states that PUT, DELETE, and safe request methods are defined as idempotent, fully answering the question."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk discusses the concept of idempotent methods but does not specify which HTTP methods are defined as idempotent."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention which HTTP methods are defined as idempotent."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk clearly states that PUT, DELETE, and safe request methods are defined as idempotent, fully answering the question."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not specify which HTTP methods are defined as idempotent."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not specify which HTTP methods are defined as idempotent."
+        }
+      ]
+    },
+    {
+      "query_id": "httpsem_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk provides a complete explanation of the Expect header field, including its purpose and behavior in HTTP requests."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the Expect header but does not explain its purpose or functionality in HTTP requests."
+        },
+        {
+          "rank": 2,
+          "rating": "full",
+          "reason": "The chunk provides a clear definition of the Expect header field and its purpose in HTTP requests."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains the purpose of the Expect header but does not provide specific examples or details about its usage."
+        },
+        {
+          "rank": 1,
+          "rating": "full",
+          "reason": "The chunk provides a clear definition of the Expect header field and its purpose in HTTP requests."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the Expect header but does not explain its purpose or functionality in HTTP requests."
+        }
+      ]
+    },
+    {
+      "query_id": "ws_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk provides a detailed explanation of the WebSocket opening handshake and how it is an HTTP Upgrade request, which directly answers the question."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain how the WebSocket opening handshake upgrades from HTTP."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides information about the server's response in the WebSocket handshake but does not explain how the upgrade from HTTP occurs."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains that the WebSocket handshake is an HTTP Upgrade request but does not detail the complete process or implications of the upgrade."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any details about the WebSocket opening handshake or how it upgrades from HTTP."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain the process of upgrading from HTTP to WebSocket or detail the handshake mechanism."
+        }
+      ]
+    },
+    {
+      "query_id": "ws_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk explains that WebSocket frame masking is required for security reasons and to avoid confusion for network intermediaries, and it specifies that clients must mask all frames sent to the server."
+        },
+        {
+          "rank": 1,
+          "rating": "full",
+          "reason": "The chunk explains that WebSocket frame masking is required for security reasons and to avoid confusion for network intermediaries, and it details the consequences of not masking frames."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk explains that client-to-server messages must be masked and mentions the masking key, but it does not explain why masking is required."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains that client-to-server messages must be masked for security reasons and to avoid confusion for intermediaries, but it does not fully elaborate on what WebSocket frame masking is."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions masking in the context of security but does not fully explain what WebSocket frame masking is or why it is required for client-to-server messages."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk only provides a technical definition of frame masking without explaining its purpose or why it is required for client-to-server messages."
+        }
+      ]
+    },
+    {
+      "query_id": "ws_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the WebSocket closing handshake but does not explain how it works or provide details about the close codes."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk describes the start of the WebSocket closing handshake but does not explain how it works in detail or list the defined close codes."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the WebSocket close handshake and the close reason but does not detail how the handshake works or list the defined close codes."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk describes the initiation of the WebSocket closing handshake but does not provide details on how the handshake works or the specific close codes defined."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk references sections related to the WebSocket close handshake and close codes but does not provide detailed information about how the handshake works or the specific close codes."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk explains the WebSocket close handshake and mentions the close code but does not provide a complete description of how the handshake works or list the defined close codes."
+        }
+      ]
+    },
+    {
+      "query_id": "ws_4",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not specifically address security considerations for WebSocket connections through proxies."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide specific security considerations related to WebSocket connections through proxies."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk discusses the WebSocket security model and handshake but does not specifically address security considerations related to proxies."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions security considerations for WebSocket connections but does not specifically address the implications of using proxies."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions attacks on proxies but does not provide specific security considerations for WebSocket connections through proxies."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide specific security considerations related to WebSocket connections through proxies."
+        }
+      ]
+    },
+    {
+      "query_id": "h2_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains streams and their characteristics but does not detail how multiplexing specifically works with frames."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk explains streams and some characteristics of multiplexing but does not detail how multiplexing specifically works with streams and frames."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk explains the basics of multiplexing with streams and frames but lacks detailed information on how multiplexing specifically works."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some details about streams and frames in HTTP/2 but does not explain how multiplexing specifically works."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any specific details about how HTTP/2 multiplexing works with streams and frames."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk explains the concept of frames and streams in HTTP/2 but does not fully detail how multiplexing specifically works."
+        }
+      ]
+    },
+    {
+      "query_id": "h2_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some information about header compression in HTTP/2 but does not explain what HPACK specifically is or how it works."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any information about HPACK header compression specifically."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions header field compression in HTTP/2 but does not explain what HPACK is or how it specifically relates to header compression."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any information specifically about HPACK header compression in HTTP/2."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention HPACK or provide any details about header compression in HTTP/2."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not explain what HPACK header compression is or how it works in HTTP/2."
+        }
+      ]
+    },
+    {
+      "query_id": "h2_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some information about flow control principles in HTTP/2 but does not explain how flow control works specifically at the stream and connection levels."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk explains the flow-control windows at the stream and connection level but does not detail how flow control operates in practice or its implications."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides information about flow control at the stream level but lacks details on how it operates at the connection level."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some information about flow control principles in HTTP/2 but does not fully explain how it works at both the stream and connection levels."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides an overview of flow control in HTTP/2 but lacks detailed explanations of how it operates specifically at the stream and connection levels."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some information about HTTP/2 flow control and the WINDOW_UPDATE frame but does not explain how flow control works at the stream and connection level."
+        }
+      ]
+    },
+    {
+      "query_id": "h2_4",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some information about server push and the PUSH_PROMISE frame but lacks a comprehensive explanation of how the PUSH_PROMISE frame works."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some information about server push and the PUSH_PROMISE frame, but it lacks a detailed explanation of how the PUSH_PROMISE frame works."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk explains the PUSH_PROMISE frame and its role in server push but does not provide a comprehensive explanation of server push itself."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains server push in HTTP/2 but does not detail how the PUSH_PROMISE frame works."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk explains server push and mentions the PUSH_PROMISE frame but does not provide details on how the PUSH_PROMISE frame works."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some details about the PUSH_PROMISE frame and its interaction with streams, but it does not explain what server push is in HTTP/2."
+        }
+      ]
+    },
+    {
+      "query_id": "gdpr_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides information about the right to erasure but does not include the exceptions to this right."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions the right to erasure and some limitations but does not fully explain the right itself or list all exceptions."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the right to erasure but does not fully explain the right itself or detail the exceptions."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides information about the right to erasure but does not mention the exceptions to this right."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the right to erasure but does not fully explain the concept or list the exceptions."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the right to erasure but does not fully explain what it is or list the exceptions."
+        }
+      ]
+    },
+    {
+      "query_id": "gdpr_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk provides a complete list of the conditions for lawful processing of personal data under GDPR Article 6."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some conditions for lawful processing under GDPR Article 6 but is incomplete and does not list all applicable conditions."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide the specific conditions for lawful processing of personal data under GDPR Article 6."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions some conditions for lawful processing but does not provide a complete overview of all conditions outlined in Article 6."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some principles related to lawful processing but does not specify the conditions outlined in Article 6."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide the specific conditions for lawful processing of personal data under GDPR Article 6."
+        }
+      ]
+    },
+    {
+      "query_id": "gdpr_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk discusses responsibilities and liabilities of controllers and processors but does not clearly delineate the specific obligations imposed on each under the GDPR."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some obligations of data processors but does not address the obligations of data controllers."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk discusses obligations of processors but does not clearly differentiate between the obligations of data processors and data controllers."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides information about the obligations of data processors but does not mention the obligations of data controllers."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions responsibilities of controllers and processors but does not specify the obligations imposed by the GDPR on each."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide any specific information about the obligations of data processors or data controllers under the GDPR."
+        }
+      ]
+    },
+    {
+      "query_id": "gdpr_4",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides information about the conditions under which personal data can be transferred to third countries but does not fully explain all GDPR rules related to such transfers."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the conditions for transferring personal data to third countries but lacks specific details on the actual GDPR rules and mechanisms involved."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides a general principle for transferring personal data but lacks specific details about the conditions and requirements under GDPR for such transfers."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the conditions for transferring personal data but does not cover all aspects of GDPR rules, such as specific requirements or safeguards."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions compliance with regulations and international agreements but lacks specific details about the actual GDPR rules for transferring personal data."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides a general principle for transfers but lacks specific details about the conditions and requirements for transferring personal data to third countries."
+        }
+      ]
+    },
+    {
+      "query_id": "gdpr_5",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides information about the power of supervisory authorities to impose fines and the criteria for determining them, but it does not specify the actual amounts or ranges of the fines."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk provides some information about the considerations for imposing fines but does not specify the types or amounts of administrative fines that can be imposed under the GDPR."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides some criteria for imposing administrative fines but does not specify the actual fines or their upper limits."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk mentions the imposition of fines and their characteristics but does not specify the types or amounts of administrative fines that can be imposed."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not provide specific information about the types or amounts of administrative fines that supervisory authorities can impose under the GDPR."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions the imposition of administrative fines for infringements but does not specify the types or amounts of fines that can be imposed."
+        }
+      ]
+    },
+    {
+      "query_id": "cross_1",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "full",
+          "reason": "The chunk explains that single-use tickets can prevent replay attacks by ensuring each session ticket is only used once."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk discusses anti-replay mechanisms in token-based authentication but does not explicitly identify a specific security mechanism that prevents replay attacks."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk discusses limiting replay attacks through server instance checks but does not explicitly mention the specific security mechanism used in token-based authentication."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk discusses replay attacks but does not specify the security mechanism that prevents them in token-based authentication."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any specific security mechanism that prevents replay attacks in token-based authentication."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention any specific security mechanism that prevents replay attacks in token-based authentication."
+        }
+      ]
+    },
+    {
+      "query_id": "cross_2",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk explains the use of the Authorization header but does not specifically mention bearer credentials."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk mentions the Authorization header but does not explain how it is used to transmit bearer credentials."
+        },
+        {
+          "rank": 2,
+          "rating": "insufficient",
+          "reason": "The chunk discusses Proxy-Authorization but does not mention the authorization header or bearer credentials specifically."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "insufficient",
+          "reason": "The chunk does not mention the authorization header or how bearer credentials are transmitted."
+        },
+        {
+          "rank": 1,
+          "rating": "insufficient",
+          "reason": "The chunk discusses the Proxy-Authorization header but does not mention the authorization header or bearer credentials specifically."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk mentions the Authorization header and its role in transmitting credentials but does not specifically explain how bearer credentials are formatted or used."
+        }
+      ]
+    },
+    {
+      "query_id": "cross_3",
+      "cw_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides information about the Upgrade header in HTTP but does not mention other protocol upgrade mechanisms in web communication standards."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk discusses the Upgrade header in HTTP but does not mention other protocol upgrade mechanisms in web communication standards."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk describes the Upgrade header mechanism but does not mention other protocol upgrade mechanisms that may exist in web communication standards."
+        }
+      ],
+      "naive_judgments": [
+        {
+          "rank": 0,
+          "rating": "partial",
+          "reason": "The chunk provides information about the Upgrade header in web communication but does not mention other protocol upgrade mechanisms or provide a comprehensive overview."
+        },
+        {
+          "rank": 1,
+          "rating": "partial",
+          "reason": "The chunk mentions the Upgrade header and the Switching Protocols status code, but does not provide a comprehensive overview of all protocol upgrade mechanisms in web communication standards."
+        },
+        {
+          "rank": 2,
+          "rating": "partial",
+          "reason": "The chunk provides information about the Upgrade header in HTTP but does not cover other protocol upgrade mechanisms in web communication standards."
+        }
+      ]
+    }
+  ]
+}
