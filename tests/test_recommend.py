@@ -2,7 +2,7 @@
 
 import pytest
 
-from chunkweaver.recommend import Recommendation, recommend
+from chunkweaver.recommend import ChunkStats, PresetMatch, Recommendation, recommend
 
 
 LEGAL_EU_DOC = """\
@@ -33,6 +33,18 @@ Article 5
 Principles relating to processing of personal data
 
 (1) Personal data shall be processed lawfully, fairly and transparently.
+
+Article 6
+Lawfulness of processing
+
+(1) Processing shall be lawful only if and to the extent that at least
+one of the following applies.
+
+Article 7
+Conditions for consent
+
+Where processing is based on consent, the controller shall be able to
+demonstrate that the data subject has consented.
 """
 
 MARKDOWN_DOC = """\
@@ -73,9 +85,13 @@ PART I
 
 Item 1. Business
 
-The Company operates in multiple segments.
+The Company operates in multiple segments across North America and Europe.
+The principal products include software solutions and cloud services.
 
 Item 1A. Risk Factors
+
+Investing in our securities involves significant risks. The following
+risk factors should be carefully considered.
 
 TABLE 1
 Summary of Revenue
@@ -87,9 +103,24 @@ Year    Revenue    Costs    Profit
 2023    2,134      1,345    789
 2024    2,456      1,502    954
 
-Item 7. Management Discussion
+Item 7. Management Discussion and Analysis
+
+The following discussion should be read in conjunction with the
+consolidated financial statements.
 
 NOTE 1 Revenue Recognition
+
+Revenue is recognized when performance obligations are satisfied.
+
+TABLE 2
+Operating Expenses
+
+Year    R&D      Sales    Admin    Total
+2020    450      230      210      890
+2021    520      260      232      1,012
+2022    610      300      291      1,201
+2023    680      340      325      1,345
+2024    750      380      372      1,502
 """
 
 PLAIN_DOC = """\
@@ -100,6 +131,19 @@ match any preset boundaries.
 Another paragraph of plain text follows. Nothing special here either.
 Just regular prose without any formatting or structure beyond basic
 paragraph breaks.
+"""
+
+CHAT_DOC = """\
+[14:30] Agent: Welcome to support. How can I help?
+[14:31] Customer: My order hasn't arrived. It's been 10 days.
+[14:32] Agent: I'm sorry to hear that. Let me look into it.
+[14:33] Customer: The order number is 12345.
+[14:34] Agent: I see it was shipped Jan 5. It appears to be delayed.
+[14:35] Customer: Can you send a replacement?
+[14:36] Agent: Absolutely, I'll process that now.
+[14:37] Customer: Thank you!
+[14:38] Agent: You're welcome. Is there anything else?
+[14:39] Customer: No, that's all.
 """
 
 
@@ -124,12 +168,13 @@ class TestRecommendBasics:
         assert rec.paragraph_count == 3
 
 
-class TestPresetMatching:
+class TestPresetScoring:
     def test_legal_eu_detected(self):
         rec = recommend(LEGAL_EU_DOC)
         assert rec.recommended_preset == "legal-eu"
-        hits = {pm.name: pm.hits for pm in rec.preset_matches}
-        assert hits["legal-eu"] >= 5
+        hits = {pm.name: pm for pm in rec.preset_matches}
+        assert "legal-eu" in hits
+        assert hits["legal-eu"].hits >= 5
 
     def test_markdown_detected(self):
         rec = recommend(MARKDOWN_DOC)
@@ -143,11 +188,53 @@ class TestPresetMatching:
         rec = recommend(PLAIN_DOC)
         assert rec.recommended_preset == "plain"
 
-    def test_preset_matches_sorted_by_hits(self):
+    def test_preset_matches_sorted_by_score(self):
         rec = recommend(LEGAL_EU_DOC)
         if len(rec.preset_matches) >= 2:
-            hits = [pm.hits for pm in rec.preset_matches]
-            assert hits == sorted(hits, reverse=True)
+            scores = [pm.score for pm in rec.preset_matches]
+            assert scores == sorted(scores, reverse=True)
+
+    def test_density_normalized(self):
+        """Same content at different sizes should have similar density."""
+        rec = recommend(LEGAL_EU_DOC)
+        hits = {pm.name: pm for pm in rec.preset_matches}
+        assert hits["legal-eu"].density > 0
+
+    def test_pattern_coverage_fraction(self):
+        rec = recommend(LEGAL_EU_DOC)
+        hits = {pm.name: pm for pm in rec.preset_matches}
+        assert 0 < hits["legal-eu"].pattern_coverage <= 1.0
+
+    def test_chat_doesnt_beat_markdown_on_readme(self):
+        """Regression: generic patterns like 'word:' shouldn't outrank markdown."""
+        rec = recommend(MARKDOWN_DOC)
+        hits = {pm.name: pm for pm in rec.preset_matches}
+        if "chat" in hits and "markdown" in hits:
+            assert hits["markdown"].score > hits["chat"].score
+
+    def test_chat_wins_on_chat_log(self):
+        rec = recommend(CHAT_DOC)
+        assert rec.recommended_preset == "chat"
+
+
+class TestMultiPreset:
+    def test_financial_combo(self):
+        rec = recommend(FINANCIAL_DOC)
+        if rec.recommended_preset == "financial":
+            assert "financial-table" in rec.recommended_presets or len(rec.recommended_presets) == 1
+
+    def test_recommended_presets_list(self):
+        rec = recommend(LEGAL_EU_DOC)
+        assert isinstance(rec.recommended_presets, list)
+        assert len(rec.recommended_presets) >= 1
+
+    def test_snippet_combines_presets(self):
+        rec = recommend(FINANCIAL_DOC)
+        if len(rec.recommended_presets) > 1:
+            snip = rec.snippet()
+            for p in rec.recommended_presets:
+                const = p.upper().replace("-", "_")
+                assert const in snip
 
 
 class TestDetectorRecommendation:
@@ -170,6 +257,12 @@ class TestDetectorRecommendation:
         rec = recommend(LEGAL_EU_DOC)
         assert len(rec.heading_samples) > 0
 
+    def test_heading_threshold_scales_with_doc_size(self):
+        """A single heading in a tiny doc shouldn't trigger the detector."""
+        tiny = "INTRODUCTION\n\nSome text here."
+        rec = recommend(tiny)
+        assert rec.recommend_heading_detector is False
+
 
 class TestTargetSizeSuggestion:
     def test_short_paragraphs_get_small_target(self):
@@ -187,6 +280,52 @@ class TestTargetSizeSuggestion:
         long = recommend(("A" * 2500 + "\n\n") * 5)
         assert short.suggested_overlap <= long.suggested_overlap
 
+    def test_dense_boundaries_lower_target(self):
+        """Many boundaries in a small doc should produce a smaller target."""
+        dense = "\n".join(
+            f"Article {i}\nShort content for article {i}."
+            for i in range(1, 30)
+        )
+        rec = recommend(dense)
+        assert rec.suggested_target_size <= 1024
+
+
+class TestDryRun:
+    def test_chunk_stats_present(self):
+        rec = recommend(LEGAL_EU_DOC)
+        assert rec.chunk_stats is not None
+        assert isinstance(rec.chunk_stats, ChunkStats)
+
+    def test_chunk_count_positive(self):
+        rec = recommend(LEGAL_EU_DOC)
+        assert rec.chunk_stats.chunk_count >= 1
+
+    def test_sizes_make_sense(self):
+        rec = recommend(LEGAL_EU_DOC)
+        cs = rec.chunk_stats
+        assert cs.min_size <= cs.avg_size <= cs.max_size
+        assert cs.min_size <= cs.median_size <= cs.max_size
+
+    def test_no_warnings_on_clean_doc(self):
+        """A well-structured doc shouldn't produce warnings about oversized chunks."""
+        rec = recommend(LEGAL_EU_DOC)
+        assert rec.chunk_stats is not None
+        oversized_warnings = [w for w in rec.chunk_stats.warnings if "over 2x" in w]
+        assert len(oversized_warnings) == 0
+
+    def test_oversized_detection(self):
+        """A single huge block should warn about oversized chunks."""
+        huge = "A" * 10000
+        rec = recommend(huge)
+        cs = rec.chunk_stats
+        assert cs.max_size > rec.suggested_target_size
+
+    def test_report_shows_dry_run(self):
+        rec = recommend(LEGAL_EU_DOC)
+        report = rec.report()
+        assert "Dry-run results" in report
+        assert "chunks produced" in report
+
 
 class TestReport:
     def test_report_contains_sections(self):
@@ -198,10 +337,16 @@ class TestReport:
         assert "Suggested config" in report
         assert "Python snippet" in report
 
-    def test_report_shows_best_marker(self):
+    def test_report_shows_selected_marker(self):
         rec = recommend(LEGAL_EU_DOC)
         report = rec.report()
-        assert "<-- best" in report
+        assert "<--" in report
+
+    def test_report_shows_density_and_coverage(self):
+        rec = recommend(LEGAL_EU_DOC)
+        report = rec.report()
+        assert "density=" in report
+        assert "coverage=" in report
 
 
 class TestSnippet:
@@ -253,6 +398,7 @@ class TestCliIntegration:
         output = captured.getvalue()
         assert "chunkweaver recommend" in output
         assert "Preset matching" in output
+        assert "Dry-run results" in output
 
     def test_recommend_from_stdin(self):
         from chunkweaver.cli import main

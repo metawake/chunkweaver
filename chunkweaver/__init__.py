@@ -24,4 +24,4 @@ __all__ = [
     "SENTENCE_END_CJK",
     "SENTENCE_END_PERMISSIVE",
 ]
-__version__ = "0.2.2"
+__version__ = "0.2.3"
