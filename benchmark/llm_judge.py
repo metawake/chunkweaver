@@ -99,6 +99,52 @@ def binomial_p_value(wins, total):
     return min(p * 2, 1.0)
 
 
+def permutation_test_by_doc(query_ids, cw_by_query, naive_by_query, queries_lookup,
+                            n_permutations=10000, seed=42):
+    """Document-clustered permutation test.
+
+    Groups queries by their source document, computes per-document win rate,
+    then tests whether the observed mean win rate differs from chance by
+    permuting document-level labels.
+    """
+    import random
+    rng = random.Random(seed)
+
+    doc_wins = {}
+    for qid in query_ids:
+        docs = queries_lookup.get(qid, {}).get("relevant_docs", ["unknown"])
+        doc_key = docs[0] if docs else "unknown"
+
+        cw_list = cw_by_query.get(qid, [])
+        naive_list = naive_by_query.get(qid, [])
+        cw_best = max((RANK.get(r["rating"], 0) for r in cw_list), default=0)
+        naive_best = max((RANK.get(r["rating"], 0) for r in naive_list), default=0)
+
+        doc_wins.setdefault(doc_key, []).append(1 if cw_best > naive_best else
+                                                (-1 if naive_best > cw_best else 0))
+
+    doc_scores = []
+    for doc, outcomes in doc_wins.items():
+        non_ties = [o for o in outcomes if o != 0]
+        if non_ties:
+            doc_scores.append(sum(non_ties) / len(non_ties))
+
+    if not doc_scores:
+        return 1.0, 0, len(doc_wins)
+
+    observed = sum(doc_scores) / len(doc_scores)
+
+    count_extreme = 0
+    for _ in range(n_permutations):
+        perm_scores = [s * rng.choice([1, -1]) for s in doc_scores]
+        perm_mean = sum(perm_scores) / len(perm_scores)
+        if abs(perm_mean) >= abs(observed):
+            count_extreme += 1
+
+    p_value = count_extreme / n_permutations
+    return p_value, len(doc_scores), len(doc_wins)
+
+
 async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--queries", required=True, help="Queries JSON file")
@@ -231,6 +277,15 @@ async def main():
     print(f"  Binomial p-value (two-sided): {p_queries:.4f}"
           f"  {'*** SIGNIFICANT' if p_queries < 0.05 else '(not significant)'}")
 
+    queries_lookup = {q["id"]: q for q in queries}
+    perm_p, n_docs_tested, n_docs_total = permutation_test_by_doc(
+        query_ids, cw_by_query, naive_by_query, queries_lookup)
+
+    print(f"\n--- Document-Clustered Permutation Test ---")
+    print(f"  Documents with non-tie queries: {n_docs_tested} / {n_docs_total}")
+    print(f"  Permutation p-value (two-sided, 10k permutations): {perm_p:.4f}"
+          f"  {'*** SIGNIFICANT' if perm_p < 0.05 else '(not significant)'}")
+
     out_path = args.output or os.path.join(
         os.path.dirname(__file__), f"../runs/llm-judge-top{top_k}-40q-results.json")
     out = {
@@ -254,6 +309,8 @@ async def main():
             "query_wins_naive": query_wins_naive,
             "query_ties": query_ties,
             "query_p_value": p_queries,
+            "permutation_p_value": perm_p,
+            "n_docs_tested": n_docs_tested,
         },
         "per_query": [
             {

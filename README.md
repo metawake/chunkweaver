@@ -10,23 +10,26 @@
 
 ## The problem
 
-`RecursiveCharacterTextSplitter` splits by size and hopes for the best.
-It doesn't know that "Article 17" is a section header, or that a table
-shouldn't be split in half. The result: **incoherent chunks that straddle
-structural boundaries**, producing blurry embeddings and failed retrievals.
+Standard chunkers — including LangChain's `RecursiveCharacterTextSplitter` —
+are paragraph-aware but not structure-aware. They don't know that
+"Article 17" starts a new legal section, or that a table header belongs
+with its data rows. The result: chunks that split mid-section, producing
+blurry embeddings and incomplete retrievals.
 
 Our [LLM-as-judge benchmark](benchmark/README.md) on 11 structured documents
 (GDPR, EU AI Act, CCPA, 8 IETF RFCs) and 58 queries shows:
 
-| Metric | chunkweaver | Naive 512-char |
-|--------|-------------|----------------|
-| Full-answer chunks (top-3) | **13%** | 2% |
-| Per-query wins | **18** | 3 |
-| Binomial p-value | **0.0015** | — |
+| Baseline | CW wins | Baseline wins | p-value |
+|----------|---------|---------------|---------|
+| Naive 600-char | **15** | 4 | **0.019** |
+| LangChain RCTS | **11** | 4 | 0.119 |
 
-Structure-aware chunks are **6x more likely to contain a complete answer**
-(p < 0.002). See [benchmark/](benchmark/) for methodology, code, and
-reproduction steps.
+chunkweaver significantly outperforms naive chunking (p < 0.02). Against
+LangChain RCTS, the win ratio is similar (11:4) but not significant at
+this sample size — RCTS's paragraph heuristic captures some structural
+signal, narrowing the gap. The advantage is clearest on documents with
+explicit section markers. See [benchmark/](benchmark/) for full results,
+methodology, and reproduction steps.
 
 ## The fix
 
