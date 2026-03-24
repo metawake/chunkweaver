@@ -1,0 +1,660 @@
+{
+  "description": "Extended needle-level ground truth across GDPR and RFC documents. Each needle is a full sentence/clause (100-200 chars) that must be present in retrieved chunks to fully answer the query.",
+  "queries": [
+    {
+      "id": "gdpr_1",
+      "text": "What is the right to erasure under the GDPR and what are the exceptions?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "condition",
+      "needles": [
+        {
+          "text": "erasure of personal data concerning him or her without undue delay",
+          "source": "Art 17(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "freedom of expression and information",
+          "source": "Art 17(3)(a)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "archiving purposes in the public interest, scientific or historical research purposes or statistical purposes",
+          "source": "Art 17(3)(d)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "establishment, exercise or defence of legal claims",
+          "source": "Art 17(3)(e)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "restrict by way of a legislative measure the scope of the obligations and rights",
+          "source": "Art 23(1)",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_2",
+      "text": "What are the conditions for lawful processing of personal data under GDPR Article 6?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "condition",
+      "needles": [
+        {
+          "text": "the data subject has given consent to the processing of his or her personal data",
+          "source": "Art 6(1)(a)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "legitimate interests pursued by the controller or by a third party, except where such interests are overridden by the interests or fundamental rights and freedoms of the data subject",
+          "source": "Art 6(1)(f)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "shall not apply to processing carried out by public authorities in the performance of their tasks",
+          "source": "Art 6(1) tail",
+          "difficulty": "hard"
+        },
+        {
+          "text": "protect the vital interests of the data subject or of another natural person",
+          "source": "Art 6(1)(d)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "processing is necessary for compliance with a legal obligation to which the controller is subject",
+          "source": "Art 6(1)(c)",
+          "difficulty": "easy"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_3",
+      "text": "What obligations does the GDPR impose on data processors versus data controllers?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "definition",
+      "needles": [
+        {
+          "text": "determines the purposes and means of the processing",
+          "source": "Art 4(7)",
+          "difficulty": "hard"
+        },
+        {
+          "text": "processes personal data on behalf of the controller",
+          "source": "Art 4(8)",
+          "difficulty": "hard"
+        },
+        {
+          "text": "implement appropriate technical and organisational measures to ensure and to be able to demonstrate that processing is performed in accordance with this Regulation",
+          "source": "Art 24(1)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "shall not engage another processor without prior specific or general written authorisation of the controller",
+          "source": "Art 28(2)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "the processor shall be considered to be a controller in respect of that processing",
+          "source": "Art 28(10)",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_4",
+      "text": "What are the GDPR rules for transferring personal data to third countries?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "the level of protection of natural persons guaranteed by this Regulation is not undermined",
+          "source": "Art 44",
+          "difficulty": "easy"
+        },
+        {
+          "text": "adequate level of protection",
+          "source": "Art 45(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "binding corporate rules",
+          "source": "Art 46/47",
+          "difficulty": "medium"
+        },
+        {
+          "text": "not repetitive and that only concern a limited number of data subjects",
+          "source": "Art 49(1) last subpara",
+          "difficulty": "hard"
+        },
+        {
+          "text": "administrative fines up to 20 000 000 EUR, or in the case of an undertaking, up to 4 %",
+          "source": "Art 83(5)",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_5",
+      "text": "What administrative fines can supervisory authorities impose under the GDPR?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "penalty",
+      "needles": [
+        {
+          "text": "up to 10 000 000 EUR, or in the case of an undertaking, up to 2 % of the total worldwide annual turnover",
+          "source": "Art 83(4)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "up to 20 000 000 EUR, or in the case of an undertaking, up to 4 % of the total worldwide annual turnover",
+          "source": "Art 83(5)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the total amount of the administrative fine shall not exceed the amount specified for the gravest infringement",
+          "source": "Art 83(3)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "each Member State may lay down the rules on whether and to what extent administrative fines may be imposed on public authorities",
+          "source": "Art 83(7)",
+          "difficulty": "hard"
+        },
+        {
+          "text": "other penalties applicable to infringements of this Regulation in particular for infringements which are not subject to administrative fines",
+          "source": "Art 84(1)",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art5",
+      "text": "What are the principles relating to processing of personal data under GDPR Article 5?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "processed lawfully, fairly and in a transparent manner in relation to the data subject ('lawfulness, fairness and transparency')",
+          "source": "Art 5(1)(a)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "collected for specified, explicit and legitimate purposes and not further processed in a manner that is incompatible with those purposes",
+          "source": "Art 5(1)(b)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed ('data minimisation')",
+          "source": "Art 5(1)(c)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "processed in a manner that ensures appropriate security of the personal data, including protection against unauthorised or unlawful processing",
+          "source": "Art 5(1)(f)",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art13",
+      "text": "What information must the controller provide to the data subject under GDPR Article 13?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "the controller shall, at the time when personal data are obtained, provide the data subject with all of the following information",
+          "source": "Art 13(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the identity and the contact details of the controller and, where applicable, of the controller's representative",
+          "source": "Art 13(1)(a)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "the purposes of the processing for which the personal data are intended as well as the legal basis for the processing",
+          "source": "Art 13(1)(c)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "the period for which the personal data will be stored, or if that is not possible, the criteria used to determine that period",
+          "source": "Art 13(2)(a)",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art15",
+      "text": "What is the right of access by the data subject under GDPR Article 15?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "right to obtain from the controller confirmation as to whether or not personal data concerning him or her are being processed",
+          "source": "Art 15(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the recipients or categories of recipient to whom the personal data have been or will be disclosed",
+          "source": "Art 15(1)(c)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "The controller shall provide a copy of the personal data undergoing processing",
+          "source": "Art 15(3)",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art32",
+      "text": "What security measures must the controller implement under GDPR Article 32?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "the controller and the processor shall implement appropriate technical and organisational measures to ensure a level of security appropriate to the risk",
+          "source": "Art 32(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the pseudonymisation and encryption of personal data",
+          "source": "Art 32(1)(a)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "the ability to ensure the ongoing confidentiality, integrity, availability and resilience of processing systems and services",
+          "source": "Art 32(1)(b)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "a process for regularly testing, assessing and evaluating the effectiveness of technical and organisational measures for ensuring the security of the processing",
+          "source": "Art 32(1)(d)",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art33",
+      "text": "What are the requirements for data breach notification under GDPR Article 33?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "the controller shall without undue delay and, where feasible, not later than 72 hours after having become aware of it, notify the personal data breach",
+          "source": "Art 33(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "describe the nature of the personal data breach including where possible, the categories and approximate number of data subjects concerned",
+          "source": "Art 33(3)(a)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "describe the measures taken or proposed to be taken by the controller to address the personal data breach",
+          "source": "Art 33(3)(d)",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art7",
+      "text": "What are the conditions for consent under GDPR Article 7?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "condition",
+      "needles": [
+        {
+          "text": "the controller shall be able to demonstrate that the data subject has consented to processing of his or her personal data",
+          "source": "Art 7(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the request for consent shall be presented in a manner which is clearly distinguishable from the other matters, in an intelligible and easily accessible form, using clear and plain language",
+          "source": "Art 7(2)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "The data subject shall have the right to withdraw his or her consent at any time",
+          "source": "Art 7(3)",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art22",
+      "text": "What rights does the data subject have regarding automated decision-making under GDPR Article 22?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "The data subject shall have the right not to be subject to a decision based solely on automated processing, including profiling, which produces legal effects",
+          "source": "Art 22(1)",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the right to obtain human intervention on the part of the controller, to express his or her point of view and to contest the decision",
+          "source": "Art 22(3)",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "gdpr_art25",
+      "text": "What are the data protection by design and by default requirements under GDPR Article 25?",
+      "relevant_docs": ["eu_gdpr_2016_679.txt"],
+      "domain": "gdpr",
+      "query_type": "obligation",
+      "needles": [
+        {
+          "text": "implement appropriate technical and organisational measures, such as pseudonymisation, which are designed to implement data-protection principles, such as data minimisation",
+          "source": "Art 25(1)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "by default, only personal data which are necessary for each specific purpose of the processing are processed",
+          "source": "Art 25(2)",
+          "difficulty": "medium"
+        },
+        {
+          "text": "such measures shall ensure that by default personal data are not made accessible without the individual's intervention to an indefinite number of natural persons",
+          "source": "Art 25(2)",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "jwt_1",
+      "text": "What are the registered claim names in a JSON Web Token?",
+      "relevant_docs": ["rfc7519_jwt.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "The \"iss\" (issuer) claim identifies the principal that issued the JWT",
+          "source": "Section 4.1.1",
+          "difficulty": "easy"
+        },
+        {
+          "text": "The \"sub\" (subject) claim identifies the principal that is the subject of the JWT",
+          "source": "Section 4.1.2",
+          "difficulty": "easy"
+        },
+        {
+          "text": "The \"exp\" (expiration time) claim identifies the expiration time on or after which the JWT MUST NOT be accepted for processing",
+          "source": "Section 4.1.4",
+          "difficulty": "medium"
+        },
+        {
+          "text": "The \"jti\" (JWT ID) claim provides a unique identifier for the JWT",
+          "source": "Section 4.1.7",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "jwt_2",
+      "text": "How should a JWT be validated according to the specification?",
+      "relevant_docs": ["rfc7519_jwt.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "If any of the listed steps fail, then the JWT MUST be rejected",
+          "source": "Section 7.2",
+          "difficulty": "easy"
+        },
+        {
+          "text": "Verify that the JWT contains at least one period ('.') character",
+          "source": "Section 7.2 step 1",
+          "difficulty": "medium"
+        },
+        {
+          "text": "unless the algorithms used in the JWT are acceptable to the application, it SHOULD reject the JWT",
+          "source": "Section 7.2",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "jwt_5",
+      "text": "What security considerations apply to JSON Web Tokens regarding token replay?",
+      "relevant_docs": ["rfc7519_jwt.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "The \"jti\" claim can be used to prevent the JWT from being replayed",
+          "source": "Section 4.1.7",
+          "difficulty": "easy"
+        },
+        {
+          "text": "The identifier value MUST be assigned in a manner that ensures that there is a negligible probability that the same value will be accidentally assigned",
+          "source": "Section 4.1.7",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "oauth_1",
+      "text": "What are the four grant types defined in the OAuth 2.0 authorization framework?",
+      "relevant_docs": ["rfc6749_oauth2.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "OAuth defines four grant types: authorization code, implicit, resource owner password credentials, and client credentials",
+          "source": "Section 1.3",
+          "difficulty": "easy"
+        },
+        {
+          "text": "It also provides an extension mechanism for defining additional grant types",
+          "source": "Section 1.3",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "oauth_2",
+      "text": "How does the authorization code grant flow work in OAuth 2.0?",
+      "relevant_docs": ["rfc6749_oauth2.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "The authorization code grant type is used to obtain both access tokens and refresh tokens and is optimized for confidential clients",
+          "source": "Section 4.1",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the client must be capable of interacting with the resource owner's user-agent (typically a web browser) and capable of receiving incoming requests (via redirection)",
+          "source": "Section 4.1",
+          "difficulty": "medium"
+        },
+        {
+          "text": "The authorization server authenticates the client, validates the authorization code, and ensures that the redirection URI received matches the URI used to redirect the client",
+          "source": "Section 4.1 step E",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "oauth_3",
+      "text": "What is a refresh token and how is it used to obtain new access tokens?",
+      "relevant_docs": ["rfc6749_oauth2.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "refresh tokens are intended for use only with authorization servers and are never sent to resource servers",
+          "source": "Section 1.5",
+          "difficulty": "medium"
+        },
+        {
+          "text": "The authorization server authenticates the client and validates the refresh token, and if valid, issues a new access token",
+          "source": "Section 1.5 step H",
+          "difficulty": "easy"
+        },
+        {
+          "text": "the refresh token is bound to the client to which it was issued",
+          "source": "Section 10.4",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "tls13_1",
+      "text": "What is the TLS 1.3 handshake protocol and how does it achieve fewer round trips?",
+      "relevant_docs": ["rfc8446_tls13.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "The handshake protocol allows peers to negotiate a protocol version, select cryptographic algorithms, optionally authenticate each other, and establish shared secret keying material",
+          "source": "Section 1",
+          "difficulty": "easy"
+        },
+        {
+          "text": "A zero round-trip time (0-RTT) mode was added, saving a round trip at connection setup for some application data",
+          "source": "Section 1 major differences",
+          "difficulty": "medium"
+        },
+        {
+          "text": "All handshake messages after the ServerHello are now encrypted",
+          "source": "Section 1 major differences",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "tls13_3",
+      "text": "How does 0-RTT early data work in TLS 1.3 and what are its replay risks?",
+      "relevant_docs": ["rfc8446_tls13.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "TLS 1.3 allows clients to send data on the first flight (\"early data\")",
+          "source": "Section 2.3",
+          "difficulty": "easy"
+        },
+        {
+          "text": "The security properties for 0-RTT data are weaker than those for other kinds of TLS data",
+          "source": "Section 2.3/8",
+          "difficulty": "medium"
+        },
+        {
+          "text": "There are no guarantees of non-replay between connections",
+          "source": "Section 8",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "http11_1",
+      "text": "What HTTP methods are defined in RFC 2616 and which are considered safe?",
+      "relevant_docs": ["rfc2616_http11.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "the convention has been established that the GET and HEAD methods SHOULD NOT have the significance of taking an action other than retrieval",
+          "source": "Section 9.1.1",
+          "difficulty": "easy"
+        },
+        {
+          "text": "These methods ought to be considered \"safe\"",
+          "source": "Section 9.1.1",
+          "difficulty": "easy"
+        },
+        {
+          "text": "The methods GET and HEAD MUST be supported by all general-purpose servers",
+          "source": "Section 5.1.1",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "http11_4",
+      "text": "How does chunked transfer encoding work in HTTP/1.1?",
+      "relevant_docs": ["rfc2616_http11.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "The chunked encoding modifies the body of a message in order to transfer it as a series of chunks, each with its own size indicator",
+          "source": "Section 3.6.1",
+          "difficulty": "easy"
+        },
+        {
+          "text": "The chunked encoding is ended by any chunk whose size is zero, followed by the trailer, which is terminated by an empty line",
+          "source": "Section 3.6.1",
+          "difficulty": "medium"
+        },
+        {
+          "text": "it MUST be the last transfer-coding applied to the message-body",
+          "source": "Section 3.6.1",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    {
+      "id": "ws_1",
+      "text": "How does the WebSocket opening handshake upgrade from HTTP?",
+      "relevant_docs": ["rfc6455_websocket.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "the WebSocket client's handshake is an HTTP Upgrade request",
+          "source": "Section 1.2",
+          "difficulty": "easy"
+        },
+        {
+          "text": "Any status code other than 101 indicates that the WebSocket handshake has not completed",
+          "source": "Section 4.1",
+          "difficulty": "medium"
+        },
+        {
+          "text": "a single port can be used by both HTTP clients talking to that server and WebSocket clients talking to that server",
+          "source": "Section 1.2",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "id": "ws_2",
+      "text": "What is WebSocket frame masking and why is it required for client-to-server messages?",
+      "relevant_docs": ["rfc6455_websocket.txt"],
+      "domain": "rfc",
+      "query_type": "general",
+      "needles": [
+        {
+          "text": "a client MUST mask all frames that it sends to the server",
+          "source": "Section 5.1",
+          "difficulty": "easy"
+        },
+        {
+          "text": "All frames sent from the client to the server are masked by a 32-bit value that is contained within the frame",
+          "source": "Section 5.2",
+          "difficulty": "medium"
+        },
+        {
+          "text": "the remote script (attacker) does not have control over how the data being sent appears on the wire",
+          "source": "Section 10.3",
+          "difficulty": "hard"
+        }
+      ]
+    }
+  ]
+}

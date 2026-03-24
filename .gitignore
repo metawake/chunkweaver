@@ -1,19 +1,43 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.egg-info/
-*.egg
+*.so
+
+# Distribution / packaging
 dist/
 build/
+*.egg-info/
+*.egg
 .eggs/
+
+# Virtual environments
 .venv/
 venv/
 env/
+
+# Testing
 .pytest_cache/
 .coverage
 htmlcov/
-*.so
+.tox/
+.nox/
+
+# IDE
 .DS_Store
-benchmarks/results.json
-benchmarks/output/
+*.swp
+*.swo
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Generated benchmark artifacts
 benchmark/chunks-chunkweaver/
+benchmarks/output/
+benchmarks/results.json
+runs/
+
+# Misc
+codealike.json
+chunkweaver.txt
