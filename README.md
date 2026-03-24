@@ -19,7 +19,7 @@ blurry embeddings and incomplete retrievals.
 *Illustration of the same idea:* fixed-size splits (left) cut through sentences; structure-aware splits (right) follow logical blocks.
 
 <p align="center">
-  <img src="assets/fixed-vs-structure-aware.png" alt="Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections" width="160" />
+  <img src="assets/fixed-vs-structure-aware.png" alt="Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections" width="320" />
 </p>
 
 Our [LLM-as-judge benchmark](benchmark/README.md) on 11 structured documents
