@@ -44,3 +44,22 @@ testpaths = ["tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["chunkweaver"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "chunkweaver/",
+    "tests/",
+    "LICENSE",
+    "README.md",
+    "pyproject.toml",
+]
+exclude = [
+    "benchmark/",
+    "benchmarks/",
+    "experiments/",
+    "assets/",
+    "article-medium.md",
+    "ROADMAP.md",
+    "chunkweaver.txt",
+    ".gitignore",
+]
