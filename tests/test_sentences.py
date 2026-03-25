@@ -52,6 +52,24 @@ class TestSplitSentences:
         parts = split_sentences(text)
         assert "".join(parts) == text
 
+    def test_custom_pattern_as_string(self):
+        """The pattern= argument accepts a plain string, not just compiled regex."""
+        text = "Alpha; Beta; Gamma; Delta"
+        parts = split_sentences(text, pattern=r"(;)(\s+)")
+        assert len(parts) == 4
+        assert "".join(parts) == text
+
+    def test_permissive_with_cyrillic(self):
+        """SENTENCE_END_PERMISSIVE splits Cyrillic text where default would not."""
+        from chunkweaver.sentences import SENTENCE_END_PERMISSIVE
+
+        text = "Члан 1 дефинише обим. Члан 2 одређује услове."
+        default = split_sentences(text)
+        assert len(default) == 1  # default can't split (no A-Z after period)
+        permissive = split_sentences(text, pattern=SENTENCE_END_PERMISSIVE)
+        assert len(permissive) == 2
+        assert "".join(permissive) == text
+
 
 class TestLastNSentences:
     def test_zero_overlap(self):

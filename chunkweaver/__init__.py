@@ -13,7 +13,11 @@ from chunkweaver.detectors import (
 )
 from chunkweaver.inspect import InspectionReport, inspect_chunks
 from chunkweaver.models import Chunk
-from chunkweaver.sentences import SENTENCE_END, SENTENCE_END_CJK, SENTENCE_END_PERMISSIVE
+from chunkweaver.sentences import (
+    SENTENCE_END,
+    SENTENCE_END_CJK,
+    SENTENCE_END_PERMISSIVE,
+)
 
 __all__ = [
     "BoundarySpec",

@@ -6,9 +6,7 @@ These demonstrate how chunkweaver adapts to different text types.
 
 import re
 
-import pytest
-
-from chunkweaver import Chunker, SENTENCE_END_CJK, SENTENCE_END_PERMISSIVE
+from chunkweaver import SENTENCE_END_CJK, SENTENCE_END_PERMISSIVE, Chunker
 from chunkweaver.presets import (
     CHAT,
     CLINICAL,
@@ -18,7 +16,6 @@ from chunkweaver.presets import (
     get_preset,
 )
 from chunkweaver.sentences import split_sentences
-
 
 # -----------------------------------------------------------------------
 # Custom sentence patterns
@@ -100,7 +97,7 @@ class TestSentencePatternChat:
             target_size=60,
             overlap=1,
             overlap_unit="sentence",
-            sentence_pattern=r'([.!?])\s+',
+            sentence_pattern=r"([.!?])\s+",
             min_size=0,
         )
         chunks = chunker.chunk_with_metadata(self.CHAT_TEXT)
@@ -111,7 +108,7 @@ class TestSentencePatternMixed:
     """Mixed-language text."""
 
     def test_compiled_pattern(self):
-        pattern = re.compile(r'([.!?。！？])(\s*)')
+        pattern = re.compile(r"([.!?。！？])(\s*)")
         text = "English sentence. 日本語の文章。Another one!"
         parts = split_sentences(text, pattern=pattern)
         assert len(parts) >= 3
@@ -209,17 +206,13 @@ class TestLegalUSPreset:
             "Section 2\nDefinitions used in this Act.\n"
             "Section 3\nEnforcement provisions.\n"
         )
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=LEGAL_US, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=LEGAL_US, min_size=0)
         chunks = chunker.chunk(text)
         assert len(chunks) == 3
 
     def test_paragraph_sign(self):
         text = "§ 12 Scope of regulation.\n§ 13 Definitions.\n§ 14 Enforcement."
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=LEGAL_US, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=LEGAL_US, min_size=0)
         chunks = chunker.chunk(text)
         assert len(chunks) == 3
 
@@ -230,9 +223,7 @@ class TestLegalUSPreset:
             "NOW, THEREFORE the parties agree as follows:\n"
             "1.1 Definitions.\n"
         )
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=LEGAL_US, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=LEGAL_US, min_size=0)
         chunks = chunker.chunk(text)
         assert len(chunks) >= 3
 
@@ -244,28 +235,19 @@ class TestChatPreset:
             "[14:31] Bob: Almost done with the API.\n"
             "[14:32] Alice: Great, let's deploy tomorrow.\n"
         )
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=CHAT, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=CHAT, min_size=0)
         chunks = chunker.chunk(text)
         assert len(chunks) == 3
 
     def test_iso_timestamp(self):
-        text = (
-            "2024-01-15 14:30 Alice: First message.\n"
-            "2024-01-15 14:31 Bob: Second message.\n"
-        )
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=CHAT, min_size=0
-        )
+        text = "2024-01-15 14:30 Alice: First message.\n2024-01-15 14:31 Bob: Second message.\n"
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=CHAT, min_size=0)
         chunks = chunker.chunk(text)
         assert len(chunks) == 2
 
     def test_speaker_colon(self):
         text = "Agent: Hello, how can I help?\nCustomer: I have a billing issue.\nAgent: Let me check."
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=CHAT, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=CHAT, min_size=0)
         chunks = chunker.chunk(text)
         assert len(chunks) == 3
 
@@ -285,16 +267,12 @@ class TestClinicalPreset:
     )
 
     def test_sections_split_correctly(self):
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=CLINICAL, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=CLINICAL, min_size=0)
         chunks = chunker.chunk(self.DISCHARGE_NOTE)
         assert len(chunks) >= 7
 
     def test_assessment_stays_intact(self):
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=CLINICAL, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=CLINICAL, min_size=0)
         chunks = chunker.chunk(self.DISCHARGE_NOTE)
         assessment = [c for c in chunks if "ASSESSMENT:" in c]
         assert len(assessment) == 1
@@ -316,9 +294,7 @@ class TestFinancialPreset:
     )
 
     def test_sec_filing_structure(self):
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=FINANCIAL, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=FINANCIAL, min_size=0)
         chunks = chunker.chunk(self.SEC_FILING)
         assert len(chunks) >= 5
 
@@ -327,17 +303,24 @@ class TestFinancialPreset:
             "TABLE 1\nRevenue | 2023 | 2024\nProduct A | 100 | 120\n"
             "TABLE 2\nExpenses | 2023 | 2024\nSalaries | 50 | 55\n"
         )
-        chunker = Chunker(
-            target_size=5000, overlap=0, boundaries=FINANCIAL_TABLE, min_size=0
-        )
+        chunker = Chunker(target_size=5000, overlap=0, boundaries=FINANCIAL_TABLE, min_size=0)
         chunks = chunker.chunk(text)
         assert len(chunks) == 2
 
 
 class TestGetPresetNewEntries:
     def test_all_presets_accessible(self):
-        for name in ("legal-eu", "legal-us", "rfc", "markdown", "chat",
-                      "clinical", "financial", "financial-table", "plain"):
+        for name in (
+            "legal-eu",
+            "legal-us",
+            "rfc",
+            "markdown",
+            "chat",
+            "clinical",
+            "financial",
+            "financial-table",
+            "plain",
+        ):
             result = get_preset(name)
             assert isinstance(result, list)
 
@@ -401,13 +384,15 @@ class TestRealisticScenarios:
         assert len(chunks) == 5
 
     def test_mixed_language_document(self):
-        text = "# Overview\nThis is English. 这是中文。And back to English.\n# Details\nMore content."
+        text = (
+            "# Overview\nThis is English. 这是中文。And back to English.\n# Details\nMore content."
+        )
         chunker = Chunker(
             target_size=5000,
             overlap=1,
             overlap_unit="sentence",
             boundaries=[r"^#{1,6}\s"],
-            sentence_pattern=re.compile(r'([.!?。！？])(\s*)'),
+            sentence_pattern=re.compile(r"([.!?。！？])(\s*)"),
             min_size=0,
         )
         chunks = chunker.chunk_with_metadata(text)

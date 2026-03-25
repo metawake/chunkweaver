@@ -19,10 +19,8 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List
 
 from chunkweaver.detectors import Annotation, BoundaryDetector, KeepTogetherRegion
-
 
 # ---------------------------------------------------------------------------
 # Patterns for numeric content
@@ -31,14 +29,13 @@ from chunkweaver.detectors import Annotation, BoundaryDetector, KeepTogetherRegi
 _MULTI_NUM_RE = re.compile(r"[\d,]+\.?\d*")
 _YEAR_LINE_RE = re.compile(r"^\s*(20\d{2}\s+){2,}")
 _FOOTNOTE_RE = re.compile(r"^\s*\([a-z]\)")
-_UNITS_RE = re.compile(
-    r"\(in (millions|billions|thousands)\)", re.IGNORECASE
-)
+_UNITS_RE = re.compile(r"\(in (millions|billions|thousands)\)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
 class TableRegion:
     """Internal result — a detected table region with metadata."""
+
     start_line: int
     end_line: int
     start_char: int
@@ -87,7 +84,8 @@ class TableDetector(BoundaryDetector):
         self.max_gap = max_gap
         self.max_overshoot = max_overshoot
 
-    def detect(self, text: str) -> List[Annotation]:
+    def detect(self, text: str) -> list[Annotation]:
+        """Return ``KeepTogetherRegion`` annotations for detected table regions."""
         regions = self._find_regions(text)
         return [
             KeepTogetherRegion(
@@ -99,11 +97,11 @@ class TableDetector(BoundaryDetector):
             for r in regions
         ]
 
-    def detect_with_metadata(self, text: str) -> List[TableRegion]:
+    def detect_with_metadata(self, text: str) -> list[TableRegion]:
         """Return raw regions with metadata (useful for debugging)."""
         return self._find_regions(text)
 
-    def _find_regions(self, text: str) -> List[TableRegion]:
+    def _find_regions(self, text: str) -> list[TableRegion]:
         lines = text.split("\n")
         n = len(lines)
         stripped = [ln.strip() for ln in lines]
@@ -176,14 +174,16 @@ class TableDetector(BoundaryDetector):
             start_char = line_offsets[header_start]
             end_char = line_offsets[foot_end] if foot_end < len(line_offsets) else len(text)
 
-            regions.append(TableRegion(
-                start_line=header_start,
-                end_line=foot_end,
-                start_char=start_char,
-                end_char=end_char,
-                header_text=header_text[:80],
-                num_data_lines=sum(1 for k in range(run_start, run_end) if is_num[k]),
-            ))
+            regions.append(
+                TableRegion(
+                    start_line=header_start,
+                    end_line=foot_end,
+                    start_char=start_char,
+                    end_char=end_char,
+                    header_text=header_text[:80],
+                    num_data_lines=sum(1 for k in range(run_start, run_end) if is_num[k]),
+                )
+            )
 
         # Phase 3: merge overlapping regions
         if regions:

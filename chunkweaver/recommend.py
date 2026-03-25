@@ -16,17 +16,15 @@ from __future__ import annotations
 
 import re
 import statistics
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from dataclasses import dataclass
 
 from chunkweaver.boundaries import detect_boundaries
 from chunkweaver.detector_heading import HeadingDetector
 from chunkweaver.detector_table import TableDetector
 from chunkweaver.presets import PRESETS
 
-
 # Presets that are commonly combined (same domain, complementary patterns)
-_COMBO_PAIRS: List[Tuple[str, str]] = [
+_COMBO_PAIRS: list[tuple[str, str]] = [
     ("financial", "financial-table"),
 ]
 
@@ -34,28 +32,31 @@ _COMBO_PAIRS: List[Tuple[str, str]] = [
 @dataclass
 class OcrDamageReport:
     """Assessment of OCR / PDF extraction quality."""
+
     damaged_line_count: int
     total_short_lines: int
     damage_ratio: float  # damaged / total short lines
     level: str  # "none", "light", "heavy"
     recommend_ml_detector: bool
-    sample_lines: List[str]
+    sample_lines: list[str]
 
 
 @dataclass
 class PresetMatch:
     """How well a preset matched a document."""
+
     name: str
     hits: int
     density: float  # hits per 100 lines
     pattern_coverage: float  # fraction of preset patterns that fired
     score: float  # combined ranking score
-    sample_matches: List[str]
+    sample_matches: list[str]
 
 
 @dataclass
 class ChunkStats:
     """Statistics from a dry-run chunk of the document."""
+
     chunk_count: int
     avg_size: int
     min_size: int
@@ -63,34 +64,35 @@ class ChunkStats:
     median_size: int
     oversized_count: int  # chunks > 2x target
     undersized_count: int  # chunks < min_size
-    warnings: List[str]
+    warnings: list[str]
 
 
 @dataclass
 class Recommendation:
     """Full recommendation for a document."""
+
     char_count: int
     line_count: int
     paragraph_count: int
     avg_paragraph_chars: int
 
-    preset_matches: List[PresetMatch]
-    recommended_presets: List[str]
-    extra_boundaries: List[str]
+    preset_matches: list[PresetMatch]
+    recommended_presets: list[str]
+    extra_boundaries: list[str]
 
     heading_count: int
     recommend_heading_detector: bool
-    heading_samples: List[str]
+    heading_samples: list[str]
 
     table_count: int
     recommend_table_detector: bool
-    table_samples: List[str]
+    table_samples: list[str]
 
     suggested_target_size: int
     suggested_overlap: int
 
-    ocr_damage: Optional[OcrDamageReport] = None
-    chunk_stats: Optional[ChunkStats] = None
+    ocr_damage: OcrDamageReport | None = None
+    chunk_stats: ChunkStats | None = None
 
     @property
     def recommended_preset(self) -> str:
@@ -102,8 +104,10 @@ class Recommendation:
         lines: list[str] = []
         lines.append("=== chunkweaver recommend ===\n")
 
-        lines.append(f"Document: {self.char_count:,} chars, {self.line_count:,} lines, "
-                     f"{self.paragraph_count} paragraphs")
+        lines.append(
+            f"Document: {self.char_count:,} chars, {self.line_count:,} lines, "
+            f"{self.paragraph_count} paragraphs"
+        )
         lines.append(f"Avg paragraph: ~{self.avg_paragraph_chars} chars\n")
 
         lines.append("--- Preset matching ---")
@@ -147,9 +151,11 @@ class Recommendation:
         if self.ocr_damage and self.ocr_damage.level != "none":
             od = self.ocr_damage
             lines.append("--- OCR quality ---")
-            lines.append(f"  Damage level: {od.level} "
-                         f"({od.damaged_line_count} damaged lines, "
-                         f"{od.damage_ratio:.0%} of short lines)")
+            lines.append(
+                f"  Damage level: {od.level} "
+                f"({od.damaged_line_count} damaged lines, "
+                f"{od.damage_ratio:.0%} of short lines)"
+            )
             for s in od.sample_lines[:3]:
                 lines.append(f"    e.g. {s!r}")
             if od.recommend_ml_detector:
@@ -165,11 +171,15 @@ class Recommendation:
             cs = self.chunk_stats
             lines.append("--- Dry-run results ---")
             lines.append(f"  {cs.chunk_count} chunks produced")
-            lines.append(f"  sizes: avg={cs.avg_size}, median={cs.median_size}, "
-                         f"min={cs.min_size}, max={cs.max_size}")
+            lines.append(
+                f"  sizes: avg={cs.avg_size}, median={cs.median_size}, "
+                f"min={cs.min_size}, max={cs.max_size}"
+            )
             if cs.oversized_count:
-                lines.append(f"  {cs.oversized_count} chunks over 2x target "
-                             f"(>{self.suggested_target_size * 2} chars)")
+                lines.append(
+                    f"  {cs.oversized_count} chunks over 2x target "
+                    f"(>{self.suggested_target_size * 2} chars)"
+                )
             if cs.undersized_count:
                 lines.append(f"  {cs.undersized_count} chunks under min_size (200 chars)")
             if cs.warnings:
@@ -191,31 +201,25 @@ class Recommendation:
         comments: list[str] = []
 
         preset_consts = [
-            p.upper().replace("-", "_")
-            for p in self.recommended_presets
-            if p != "plain"
+            p.upper().replace("-", "_") for p in self.recommended_presets if p != "plain"
         ]
         if preset_consts:
             consts_str = ", ".join(preset_consts)
             imports.append(f"from chunkweaver.presets import {consts_str}")
 
-        use_ml_ocr = (
-            self.ocr_damage is not None
-            and self.ocr_damage.recommend_ml_detector
-        )
+        use_ml_ocr = self.ocr_damage is not None and self.ocr_damage.recommend_ml_detector
 
         if self.recommend_heading_detector and not use_ml_ocr:
             imports.append("from chunkweaver.detector_heading import HeadingDetector")
             detector_args.append("HeadingDetector()")
         if use_ml_ocr:
             comments.append(
-                "# OCR damage detected — use ML heading detector\n"
+                "# OCR damage detected — consider adding the ML heading detector.\n"
                 "# pip install scikit-learn joblib\n"
-                "# See examples/ml-detectors/ocr_heading_detector/"
+                "# See examples/ml-detectors/ocr_heading_detector/ for setup."
             )
             imports.append("from chunkweaver.detector_heading import HeadingDetector")
             detector_args.append("HeadingDetector()")
-            detector_args.append("MLOCRHeadingDetector()")
         if self.recommend_table_detector:
             imports.append("from chunkweaver.detector_table import TableDetector")
             detector_args.append("TableDetector()")
@@ -274,16 +278,50 @@ def _detect_ocr_damage(text: str) -> OcrDamageReport:
 
         # Check for partial fragmentation: many short non-common tokens
         common_short = {
-            "the", "and", "for", "not", "but", "are", "was", "has", "its",
-            "all", "any", "can", "may", "per", "via", "our", "due", "set",
-            "no", "of", "to", "in", "on", "at", "or", "by", "is", "as",
-            "an", "be", "do", "if", "so", "up", "it", "he", "we", "a", "i",
+            "the",
+            "and",
+            "for",
+            "not",
+            "but",
+            "are",
+            "was",
+            "has",
+            "its",
+            "all",
+            "any",
+            "can",
+            "may",
+            "per",
+            "via",
+            "our",
+            "due",
+            "set",
+            "no",
+            "of",
+            "to",
+            "in",
+            "on",
+            "at",
+            "or",
+            "by",
+            "is",
+            "as",
+            "an",
+            "be",
+            "do",
+            "if",
+            "so",
+            "up",
+            "it",
+            "he",
+            "we",
+            "a",
+            "i",
         }
         fragments = sum(
-            1 for t in tokens
-            if 2 <= len(t) <= 4
-            and t.lower() not in common_short
-            and not t.isdigit()
+            1
+            for t in tokens
+            if 2 <= len(t) <= 4 and t.lower() not in common_short and not t.isdigit()
         )
         fragment_ratio = fragments / n_tokens
 
@@ -316,7 +354,7 @@ def _detect_ocr_damage(text: str) -> OcrDamageReport:
     )
 
 
-def _count_paragraphs(text: str) -> Tuple[int, int]:
+def _count_paragraphs(text: str) -> tuple[int, int]:
     """Return (paragraph_count, avg_paragraph_chars)."""
     paras = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
     if not paras:
@@ -325,7 +363,7 @@ def _count_paragraphs(text: str) -> Tuple[int, int]:
     return len(paras), avg
 
 
-def _detect_extra_patterns(text: str) -> List[str]:
+def _detect_extra_patterns(text: str) -> list[str]:
     """Detect structural patterns not covered by standard presets."""
     extras: list[str] = []
     if re.search(r"^```", text, re.MULTILINE):
@@ -333,9 +371,7 @@ def _detect_extra_patterns(text: str) -> List[str]:
     return extras
 
 
-def _score_presets(
-    text: str, line_count: int
-) -> List[PresetMatch]:
+def _score_presets(text: str, line_count: int) -> list[PresetMatch]:
     """Score each preset with density and pattern coverage."""
     results: list[PresetMatch] = []
     lines_factor = max(line_count, 1) / 100.0
@@ -357,20 +393,22 @@ def _score_presets(
         score = density * (0.5 + 0.5 * coverage)
 
         samples = [m.matched_text for m in matches[:5]]
-        results.append(PresetMatch(
-            name=name,
-            hits=hit_count,
-            density=round(density, 2),
-            pattern_coverage=round(coverage, 2),
-            score=round(score, 2),
-            sample_matches=samples,
-        ))
+        results.append(
+            PresetMatch(
+                name=name,
+                hits=hit_count,
+                density=round(density, 2),
+                pattern_coverage=round(coverage, 2),
+                score=round(score, 2),
+                sample_matches=samples,
+            )
+        )
 
     results.sort(key=lambda p: p.score, reverse=True)
     return results
 
 
-def _pick_presets(matches: List[PresetMatch]) -> List[str]:
+def _pick_presets(matches: list[PresetMatch]) -> list[str]:
     """Pick the best preset(s), including useful combos."""
     if not matches:
         return ["plain"]
@@ -423,8 +461,8 @@ def _suggest_target_size(
 
 def _dry_run(
     text: str,
-    recommended_presets: List[str],
-    extra_boundaries: List[str],
+    recommended_presets: list[str],
+    extra_boundaries: list[str],
     target_size: int,
     overlap: int,
     recommend_hd: bool,
@@ -459,8 +497,13 @@ def _dry_run(
     chunks = chunker.chunk(text)
     if not chunks:
         return ChunkStats(
-            chunk_count=0, avg_size=0, min_size=0, max_size=0,
-            median_size=0, oversized_count=0, undersized_count=0,
+            chunk_count=0,
+            avg_size=0,
+            min_size=0,
+            max_size=0,
+            median_size=0,
+            oversized_count=0,
+            undersized_count=0,
             warnings=["Document produced zero chunks"],
         )
 
@@ -499,7 +542,13 @@ def _dry_run(
 
 
 def recommend(text: str) -> Recommendation:
-    """Analyze *text* and return a ``Recommendation``."""
+    """Analyze *text* and return a ``Recommendation``.
+
+    Scores every built-in preset against the document, runs heuristic
+    heading/table detectors, checks for OCR damage, suggests
+    ``target_size`` and ``overlap``, and validates the recommendation
+    with a dry-run chunk.  Pure analysis — no side effects.
+    """
     line_count = text.count("\n") + 1
     para_count, avg_para = _count_paragraphs(text)
 
@@ -524,8 +573,7 @@ def recommend(text: str) -> Recommendation:
     table_samples = [r.header_text for r in table_regions[:5]]
 
     recommend_hd = (
-        len(heading_candidates) >= 3
-        and len(heading_candidates) / headings_per_100 >= 0.8
+        len(heading_candidates) >= 3 and len(heading_candidates) / headings_per_100 >= 0.8
     )
     recommend_td = len(table_regions) >= 1
 
@@ -533,8 +581,13 @@ def recommend(text: str) -> Recommendation:
     suggested_overlap = 2 if target >= 768 else 1
 
     chunk_stats = _dry_run(
-        text, recommended, extra_bounds, target, suggested_overlap,
-        recommend_hd, recommend_td,
+        text,
+        recommended,
+        extra_bounds,
+        target,
+        suggested_overlap,
+        recommend_hd,
+        recommend_td,
     )
 
     return Recommendation(

@@ -122,3 +122,19 @@ class TestGetPreset:
         result = get_preset("legal-eu")
         result.append("extra")
         assert get_preset("legal-eu") == LEGAL_EU
+
+    def test_leveled_returns_tuples(self):
+        result = get_preset("legal-eu", leveled=True)
+        assert len(result) > 0
+        assert all(isinstance(spec, tuple) and len(spec) == 2 for spec in result)
+
+    def test_leveled_fallback_to_flat(self):
+        """Presets without a _LEVELED variant should return the flat version."""
+        flat = get_preset("chat")
+        leveled = get_preset("chat", leveled=True)
+        assert flat == leveled
+
+    def test_leveled_returns_copy(self):
+        result = get_preset("rfc", leveled=True)
+        result.append(("^extra", 9))
+        assert get_preset("rfc", leveled=True) != result

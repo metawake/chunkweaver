@@ -1,7 +1,8 @@
+"""Data models for chunker output."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -15,7 +16,7 @@ class Chunk:
         end: Character offset of the chunk end in the original text.
         index: Zero-based chunk index in the output sequence.
         boundary_type: What triggered the split — "section", "paragraph",
-                       "sentence", "word", or "size".
+                       "sentence", "word", or "keep_together".
         overlap_text: The overlap portion prepended from the previous chunk.
                       Empty string when there is no overlap.
         boundary_level: Hierarchy level of the boundary that started this
@@ -34,7 +35,7 @@ class Chunk:
     def content_text(self) -> str:
         """Chunk text without the overlap prefix."""
         if self.overlap_text:
-            return self.text[len(self.overlap_text):]
+            return self.text[len(self.overlap_text) :]
         return self.text
 
     def __len__(self) -> int:

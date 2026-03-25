@@ -5,11 +5,12 @@ Runs a binomial significance test on the win/loss ratio.
 """
 
 import argparse
+import asyncio
 import json
 import os
-import asyncio
 import urllib.request
 from math import comb
+
 from openai import AsyncOpenAI
 
 JUDGE_PROMPT = """You are evaluating whether a retrieved text chunk contains enough information to fully answer a question.
@@ -48,12 +49,14 @@ def embed_texts(texts, ollama_url="http://localhost:11434"):
 
 def search_qdrant(collection, vector, top_k=3, qdrant_url="http://localhost:6333"):
     """Search Qdrant and return texts + scores."""
-    data = json.dumps({
-        "vector": vector,
-        "limit": top_k,
-        "with_payload": True,
-        "with_vector": False,
-    }).encode()
+    data = json.dumps(
+        {
+            "vector": vector,
+            "limit": top_k,
+            "with_payload": True,
+            "with_vector": False,
+        }
+    ).encode()
     req = urllib.request.Request(
         f"{qdrant_url}/collections/{collection}/points/search",
         data=data,
@@ -63,11 +66,13 @@ def search_qdrant(collection, vector, top_k=3, qdrant_url="http://localhost:6333
     resp = json.loads(urllib.request.urlopen(req).read())
     results = []
     for point in resp["result"]:
-        results.append({
-            "text": point["payload"]["text"],
-            "source": point["payload"].get("source", ""),
-            "score": point["score"],
-        })
+        results.append(
+            {
+                "text": point["payload"]["text"],
+                "source": point["payload"].get("source", ""),
+                "score": point["score"],
+            }
+        )
     return results
 
 
@@ -77,8 +82,10 @@ async def judge_one(client, query_text, chunk_text, model="gpt-4o-mini"):
         temperature=0,
         max_tokens=150,
         messages=[
-            {"role": "user", "content": JUDGE_PROMPT.format(
-                question=query_text, chunk=chunk_text[:3000])}
+            {
+                "role": "user",
+                "content": JUDGE_PROMPT.format(question=query_text, chunk=chunk_text[:3000]),
+            }
         ],
     )
     raw = resp.choices[0].message.content.strip()
@@ -99,8 +106,14 @@ def binomial_p_value(wins, total):
     return min(p * 2, 1.0)
 
 
-def permutation_test_by_doc(query_ids, cw_by_query, naive_by_query, queries_lookup,
-                            n_permutations=10000, seed=42):
+def permutation_test_by_doc(
+    query_ids,
+    cw_by_query,
+    naive_by_query,
+    queries_lookup,
+    n_permutations=10000,
+    seed=42,
+):
     """Document-clustered permutation test.
 
     Groups queries by their source document, computes per-document win rate,
@@ -108,6 +121,7 @@ def permutation_test_by_doc(query_ids, cw_by_query, naive_by_query, queries_look
     permuting document-level labels.
     """
     import random
+
     rng = random.Random(seed)
 
     doc_wins = {}
@@ -120,8 +134,9 @@ def permutation_test_by_doc(query_ids, cw_by_query, naive_by_query, queries_look
         cw_best = max((RANK.get(r["rating"], 0) for r in cw_list), default=0)
         naive_best = max((RANK.get(r["rating"], 0) for r in naive_list), default=0)
 
-        doc_wins.setdefault(doc_key, []).append(1 if cw_best > naive_best else
-                                                (-1 if naive_best > cw_best else 0))
+        doc_wins.setdefault(doc_key, []).append(
+            1 if cw_best > naive_best else (-1 if naive_best > cw_best else 0)
+        )
 
     doc_scores = []
     for doc, outcomes in doc_wins.items():
@@ -258,36 +273,52 @@ async def main():
     total_naive = sum(naive_scores.values())
 
     print("\n--- Rating Distribution ---")
-    print(f"  Chunkweaver:  full={cw_scores['full']}  partial={cw_scores['partial']}  "
-          f"insufficient={cw_scores['insufficient']}  (N={total_cw})")
-    print(f"  Naive:        full={naive_scores['full']}  partial={naive_scores['partial']}  "
-          f"insufficient={naive_scores['insufficient']}  (N={total_naive})")
-    print(f"  CW full rate:    {cw_scores['full']/max(total_cw,1):.0%}")
-    print(f"  Naive full rate: {naive_scores['full']/max(total_naive,1):.0%}")
+    print(
+        f"  Chunkweaver:  full={cw_scores['full']}  partial={cw_scores['partial']}  "
+        f"insufficient={cw_scores['insufficient']}  (N={total_cw})"
+    )
+    print(
+        f"  Naive:        full={naive_scores['full']}  partial={naive_scores['partial']}  "
+        f"insufficient={naive_scores['insufficient']}  (N={total_naive})"
+    )
+    print(f"  CW full rate:    {cw_scores['full'] / max(total_cw, 1):.0%}")
+    print(f"  Naive full rate: {naive_scores['full'] / max(total_naive, 1):.0%}")
 
     print("\n--- Paired Comparison (by rank) ---")
-    print(f"  CW wins: {pair_wins_cw}   Naive wins: {pair_wins_naive}   "
-          f"Ties: {pair_ties}   (out of {pair_wins_cw+pair_wins_naive+pair_ties})")
-    print(f"  Binomial p-value (two-sided): {p_pairs:.4f}"
-          f"  {'*** SIGNIFICANT' if p_pairs < 0.05 else '(not significant)'}")
+    print(
+        f"  CW wins: {pair_wins_cw}   Naive wins: {pair_wins_naive}   "
+        f"Ties: {pair_ties}   (out of {pair_wins_cw + pair_wins_naive + pair_ties})"
+    )
+    print(
+        f"  Binomial p-value (two-sided): {p_pairs:.4f}"
+        f"  {'*** SIGNIFICANT' if p_pairs < 0.05 else '(not significant)'}"
+    )
 
     print(f"\n--- Per-Query Best-of-{top_k} ---")
-    print(f"  CW wins: {query_wins_cw}   Naive wins: {query_wins_naive}   "
-          f"Ties: {query_ties}   (out of {len(query_ids)})")
-    print(f"  Binomial p-value (two-sided): {p_queries:.4f}"
-          f"  {'*** SIGNIFICANT' if p_queries < 0.05 else '(not significant)'}")
+    print(
+        f"  CW wins: {query_wins_cw}   Naive wins: {query_wins_naive}   "
+        f"Ties: {query_ties}   (out of {len(query_ids)})"
+    )
+    print(
+        f"  Binomial p-value (two-sided): {p_queries:.4f}"
+        f"  {'*** SIGNIFICANT' if p_queries < 0.05 else '(not significant)'}"
+    )
 
     queries_lookup = {q["id"]: q for q in queries}
     perm_p, n_docs_tested, n_docs_total = permutation_test_by_doc(
-        query_ids, cw_by_query, naive_by_query, queries_lookup)
+        query_ids, cw_by_query, naive_by_query, queries_lookup
+    )
 
-    print(f"\n--- Document-Clustered Permutation Test ---")
+    print("\n--- Document-Clustered Permutation Test ---")
     print(f"  Documents with non-tie queries: {n_docs_tested} / {n_docs_total}")
-    print(f"  Permutation p-value (two-sided, 10k permutations): {perm_p:.4f}"
-          f"  {'*** SIGNIFICANT' if perm_p < 0.05 else '(not significant)'}")
+    print(
+        f"  Permutation p-value (two-sided, 10k permutations): {perm_p:.4f}"
+        f"  {'*** SIGNIFICANT' if perm_p < 0.05 else '(not significant)'}"
+    )
 
     out_path = args.output or os.path.join(
-        os.path.dirname(__file__), f"../runs/llm-judge-top{top_k}-40q-results.json")
+        os.path.dirname(__file__), f"../runs/llm-judge-top{top_k}-40q-results.json"
+    )
     out = {
         "experiment": "llm-as-judge-answer-sufficiency",
         "model": "gpt-4o-mini",

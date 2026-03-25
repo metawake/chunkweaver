@@ -1,21 +1,16 @@
 """Tests for the inspect module — post-chunking diagnostics."""
 
-import pytest
-
-from chunkweaver import Chunker, Chunk
+from chunkweaver import Chunk, Chunker
 from chunkweaver.inspect import (
     InspectionReport,
-    NearMissHeading,
-    PatternSuggestion,
-    inspect_chunks,
     _analyze_sizes,
     _boundary_breakdown,
-    _overlap_health,
     _detect_orphans,
-    _suggest_patterns,
     _find_near_miss_headings,
+    _overlap_health,
+    _suggest_patterns,
+    inspect_chunks,
 )
-
 
 # --- Test documents ---
 
@@ -107,6 +102,7 @@ def _make_chunk(
 # Layer 1: Size distribution
 # -----------------------------------------------------------------------
 
+
 class TestSizeDistribution:
     def test_basic_stats(self):
         chunks = [
@@ -140,6 +136,7 @@ class TestSizeDistribution:
 # Layer 1: Boundary breakdown
 # -----------------------------------------------------------------------
 
+
 class TestBoundaryBreakdown:
     def test_section_splits(self):
         chunks = [
@@ -166,6 +163,7 @@ class TestBoundaryBreakdown:
 # Layer 1: Overlap health
 # -----------------------------------------------------------------------
 
+
 class TestOverlapHealth:
     def test_no_overlap(self):
         chunks = [_make_chunk("Hello world", overlap_text="")]
@@ -187,6 +185,7 @@ class TestOverlapHealth:
 # Layer 1: Orphan detection
 # -----------------------------------------------------------------------
 
+
 class TestOrphanDetection:
     def test_normal_chunks_no_orphans(self):
         chunks = [
@@ -207,6 +206,7 @@ class TestOrphanDetection:
 # -----------------------------------------------------------------------
 # Layer 1: Suggestions
 # -----------------------------------------------------------------------
+
 
 class TestSuggestions:
     def test_high_fallback_ratio_suggestion(self):
@@ -237,6 +237,7 @@ class TestSuggestions:
 # Layer 2: Near-miss headings
 # -----------------------------------------------------------------------
 
+
 class TestNearMissHeadings:
     def test_finds_near_misses(self):
         text = "INTRODUCTION\n\nSome body text.\n\nConclusion notes."
@@ -255,6 +256,7 @@ class TestNearMissHeadings:
 # -----------------------------------------------------------------------
 # Layer 2: Pattern suggestions
 # -----------------------------------------------------------------------
+
 
 class TestPatternSuggestions:
     def test_detects_schedule_patterns(self):
@@ -276,6 +278,7 @@ class TestPatternSuggestions:
 # -----------------------------------------------------------------------
 # Integration: full inspect_chunks
 # -----------------------------------------------------------------------
+
 
 class TestInspectChunks:
     def test_returns_report(self):
@@ -303,18 +306,23 @@ class TestInspectChunks:
         chunker = Chunker(target_size=300, overlap=0, boundaries=boundaries, min_size=0)
         chunks = chunker.chunk_with_metadata(LEGAL_DOC)
         report = inspect_chunks(
-            chunks, LEGAL_DOC,
-            target_size=300, boundaries=boundaries,
+            chunks,
+            LEGAL_DOC,
+            target_size=300,
+            boundaries=boundaries,
         )
         assert report.boundary_counts.get("section", 0) > 0
 
     def test_with_preset(self):
         from chunkweaver.presets import LEGAL_EU
+
         chunker = Chunker(target_size=500, overlap=0, boundaries=LEGAL_EU, min_size=0)
         chunks = chunker.chunk_with_metadata(LEGAL_DOC)
         report = inspect_chunks(
-            chunks, LEGAL_DOC,
-            target_size=500, boundaries=LEGAL_EU,
+            chunks,
+            LEGAL_DOC,
+            target_size=500,
+            boundaries=LEGAL_EU,
         )
         assert report.fallback_ratio < 0.5
 
@@ -332,6 +340,7 @@ class TestInspectChunks:
 # Report formatting
 # -----------------------------------------------------------------------
 
+
 class TestReportFormat:
     def test_report_shows_all_sections(self):
         chunks = [
@@ -346,6 +355,7 @@ class TestReportFormat:
 
     def test_report_with_coherence(self):
         from chunkweaver.inspect import ChunkCoherenceRating
+
         chunks = [_make_chunk("Body text. " * 10, index=0)]
         report = inspect_chunks(chunks, "Body text. " * 10, target_size=500)
         report.coherence_ratings = [
@@ -361,11 +371,13 @@ class TestReportFormat:
 # CLI integration
 # -----------------------------------------------------------------------
 
+
 class TestCliInspect:
     def test_inspect_flag_runs(self):
-        from chunkweaver.cli import main
         import io
         import sys
+
+        from chunkweaver.cli import main
 
         captured = io.StringIO()
         old_stdout = sys.stdout

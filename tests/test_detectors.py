@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-from typing import List
-
 import pytest
 
 from chunkweaver import (
-    Chunker,
-    BoundaryDetector,
-    SplitPoint,
-    KeepTogetherRegion,
     Annotation,
+    BoundaryDetector,
+    Chunker,
+    KeepTogetherRegion,
+    SplitPoint,
 )
-
 
 # ---------------------------------------------------------------------------
 # Test detectors — concrete implementations for testing
@@ -23,20 +20,22 @@ from chunkweaver import (
 class FixedSplitDetector(BoundaryDetector):
     """Splits at lines matching exact strings."""
 
-    def __init__(self, markers: List[str]):
+    def __init__(self, markers: list[str]):
         self._markers = markers
 
-    def detect(self, text: str) -> List[Annotation]:
-        results: List[Annotation] = []
+    def detect(self, text: str) -> list[Annotation]:
+        results: list[Annotation] = []
         offset = 0
         for line_no, line in enumerate(text.split("\n")):
             stripped = line.strip()
             if stripped in self._markers:
-                results.append(SplitPoint(
-                    position=offset,
-                    line_number=line_no,
-                    label=f"marker: {stripped}",
-                ))
+                results.append(
+                    SplitPoint(
+                        position=offset,
+                        line_number=line_no,
+                        label=f"marker: {stripped}",
+                    )
+                )
             offset += len(line) + 1
         return results
 
@@ -44,10 +43,10 @@ class FixedSplitDetector(BoundaryDetector):
 class FixedKeepTogetherDetector(BoundaryDetector):
     """Marks specific char ranges as keep-together."""
 
-    def __init__(self, regions: List[tuple]):
+    def __init__(self, regions: list[tuple]):
         self._regions = regions
 
-    def detect(self, text: str) -> List[Annotation]:
+    def detect(self, text: str) -> list[Annotation]:
         return [
             KeepTogetherRegion(
                 start=start,
@@ -88,7 +87,9 @@ class TestBoundaryDetectorABC:
 
 class TestSplitPointIntegration:
     def test_detector_splits_like_regex(self):
-        text = "Intro paragraph.\n\n## Revenue\n\nRevenue was strong.\n\n## Costs\n\nCosts were low."
+        text = (
+            "Intro paragraph.\n\n## Revenue\n\nRevenue was strong.\n\n## Costs\n\nCosts were low."
+        )
 
         chunker_regex = Chunker(
             target_size=50,
@@ -110,11 +111,7 @@ class TestSplitPointIntegration:
         assert chunks_regex == chunks_detector
 
     def test_detector_and_regex_combine(self):
-        text = (
-            "PART I\n\nSome intro.\n\n"
-            "SECTION A\n\nContent A.\n\n"
-            "SECTION B\n\nContent B."
-        )
+        text = "PART I\n\nSome intro.\n\nSECTION A\n\nContent A.\n\nSECTION B\n\nContent B."
 
         chunker = Chunker(
             target_size=40,
@@ -184,9 +181,11 @@ class TestKeepTogetherRegionIntegration:
         chunks_plain = chunker_plain.chunk(text)
 
         # With protection: table should stay together
-        detector = FixedKeepTogetherDetector([
-            (table_start, table_end, "table: revenue", 2.0),
-        ])
+        detector = FixedKeepTogetherDetector(
+            [
+                (table_start, table_end, "table: revenue", 2.0),
+            ]
+        )
         chunker_protected = Chunker(
             target_size=80,
             overlap=0,
@@ -196,7 +195,7 @@ class TestKeepTogetherRegionIntegration:
         chunks_protected = chunker_protected.chunk(text)
 
         # Find the chunk containing "Revenue" in each
-        table_chunk_plain = [c for c in chunks_plain if "Revenue" in c]
+        _table_chunk_plain = [c for c in chunks_plain if "Revenue" in c]
         table_chunk_protected = [c for c in chunks_protected if "Revenue" in c]
 
         assert len(table_chunk_protected) >= 1
@@ -209,12 +208,14 @@ class TestKeepTogetherRegionIntegration:
     def test_keep_together_respects_max_overshoot(self):
         """If a keep-together region exceeds max_overshoot * target_size,
         it falls back to normal splitting."""
-        lines = [f"Row {i:3d}  {i*100:5d}  {i*200:5d}" for i in range(20)]
+        lines = [f"Row {i:3d}  {i * 100:5d}  {i * 200:5d}" for i in range(20)]
         text = "\n".join(lines)
 
-        detector = FixedKeepTogetherDetector([
-            (0, len(text), "huge table", 1.2),
-        ])
+        detector = FixedKeepTogetherDetector(
+            [
+                (0, len(text), "huge table", 1.2),
+            ]
+        )
 
         chunker = Chunker(
             target_size=100,
@@ -243,16 +244,14 @@ class TestKeepTogetherRegionIntegration:
         table_end = text.index("60") + len("60")
 
         class CombinedDetector(BoundaryDetector):
-            def detect(self, text: str) -> List[Annotation]:
-                results: List[Annotation] = []
+            def detect(self, text: str) -> list[Annotation]:
+                results: list[Annotation] = []
                 offset = 0
                 for line_no, line in enumerate(text.split("\n")):
                     if line.startswith("# "):
                         results.append(SplitPoint(offset, line_no, line))
                     offset += len(line) + 1
-                results.append(KeepTogetherRegion(
-                    table_start, table_end, "test table", 2.0
-                ))
+                results.append(KeepTogetherRegion(table_start, table_end, "test table", 2.0))
                 return results
 
         chunker = Chunker(
@@ -275,11 +274,7 @@ class TestKeepTogetherRegionIntegration:
     def test_multiple_keep_together_regions(self):
         """Multiple keep-together regions in the same document."""
         text = (
-            "Intro.\n\n"
-            "T1A  1  2\nT1B  3  4\n\n"
-            "Middle paragraph.\n\n"
-            "T2A  5  6\nT2B  7  8\n\n"
-            "Outro."
+            "Intro.\n\nT1A  1  2\nT1B  3  4\n\nMiddle paragraph.\n\nT2A  5  6\nT2B  7  8\n\nOutro."
         )
 
         t1_start = text.index("T1A")
@@ -287,10 +282,12 @@ class TestKeepTogetherRegionIntegration:
         t2_start = text.index("T2A")
         t2_end = text.index("T2B  7  8") + len("T2B  7  8")
 
-        detector = FixedKeepTogetherDetector([
-            (t1_start, t1_end, "table 1", 2.0),
-            (t2_start, t2_end, "table 2", 2.0),
-        ])
+        detector = FixedKeepTogetherDetector(
+            [
+                (t1_start, t1_end, "table 1", 2.0),
+                (t2_start, t2_end, "table 2", 2.0),
+            ]
+        )
 
         chunker = Chunker(
             target_size=30,
@@ -322,7 +319,7 @@ class TestDetectorEdgeCases:
 
     def test_detector_returns_empty(self):
         class EmptyDetector(BoundaryDetector):
-            def detect(self, text: str) -> List[Annotation]:
+            def detect(self, text: str) -> list[Annotation]:
                 return []
 
         chunker = Chunker(target_size=100, detectors=[EmptyDetector()])
@@ -368,12 +365,18 @@ class TestConcurrentDetectors:
         ]
 
         serial = Chunker(
-            target_size=60, overlap=0, detectors=detectors,
-            min_size=0, concurrent=False,
+            target_size=60,
+            overlap=0,
+            detectors=detectors,
+            min_size=0,
+            concurrent=False,
         )
         concurrent = Chunker(
-            target_size=60, overlap=0, detectors=detectors,
-            min_size=0, concurrent=True,
+            target_size=60,
+            overlap=0,
+            detectors=detectors,
+            min_size=0,
+            concurrent=True,
         )
 
         assert serial.chunk(text) == concurrent.chunk(text)
@@ -386,13 +389,19 @@ class TestConcurrentDetectors:
         ]
 
         serial_chunks = Chunker(
-            target_size=60, overlap=0, detectors=detectors,
-            min_size=0, concurrent=False,
+            target_size=60,
+            overlap=0,
+            detectors=detectors,
+            min_size=0,
+            concurrent=False,
         ).chunk_with_metadata(text)
 
         concurrent_chunks = Chunker(
-            target_size=60, overlap=0, detectors=detectors,
-            min_size=0, concurrent=True,
+            target_size=60,
+            overlap=0,
+            detectors=detectors,
+            min_size=0,
+            concurrent=True,
         ).chunk_with_metadata(text)
 
         assert len(serial_chunks) == len(concurrent_chunks)
@@ -404,9 +413,11 @@ class TestConcurrentDetectors:
     def test_concurrent_with_single_detector(self):
         text = "Intro.\n\nMARKER\n\nContent."
         chunker = Chunker(
-            target_size=30, overlap=0,
+            target_size=30,
+            overlap=0,
             detectors=[FixedSplitDetector(["MARKER"])],
-            min_size=0, concurrent=True,
+            min_size=0,
+            concurrent=True,
         )
         chunks = chunker.chunk(text)
         assert any("MARKER" in c for c in chunks)
@@ -420,18 +431,19 @@ class TestConcurrentDetectors:
         import time
 
         class SlowDetector(BoundaryDetector):
-            def detect(self, text: str) -> List[Annotation]:
+            def detect(self, text: str) -> list[Annotation]:
                 time.sleep(0.1)
                 return [SplitPoint(position=0, line_number=0, label="slow")]
 
         class FastDetector(BoundaryDetector):
-            def detect(self, text: str) -> List[Annotation]:
+            def detect(self, text: str) -> list[Annotation]:
                 return []
 
         text = "Section A.\n\nSection B.\n\nSection C."
         start = time.monotonic()
         chunker = Chunker(
-            target_size=100, overlap=0,
+            target_size=100,
+            overlap=0,
             detectors=[SlowDetector(), SlowDetector(), FastDetector()],
             concurrent=True,
         )
@@ -439,3 +451,137 @@ class TestConcurrentDetectors:
         elapsed = time.monotonic() - start
         # Two SlowDetectors at 0.1s each; concurrent should take ~0.1s not ~0.2s
         assert elapsed < 0.18
+
+
+# ---------------------------------------------------------------------------
+# Direct unit tests for HeadingDetector
+# ---------------------------------------------------------------------------
+
+
+class TestHeadingDetectorDirect:
+    def test_detects_all_caps_heading(self):
+        from chunkweaver.detector_heading import HeadingDetector
+
+        text = (
+            "\n"
+            "DEFINITIONS\n"
+            "\n"
+            "The following terms shall have the meanings ascribed to them "
+            "in this section of the agreement.\n"
+        )
+        hd = HeadingDetector(min_score=3.0)
+        annotations = hd.detect(text)
+        assert len(annotations) >= 1
+        assert any("DEFINITIONS" in a.label for a in annotations)
+
+    def test_detects_title_case_heading(self):
+        from chunkweaver.detector_heading import HeadingDetector
+
+        text = (
+            "\n"
+            "Risk Factors\n"
+            "\n"
+            "The company faces several material risks including market "
+            "volatility, regulatory changes, competitive dynamics, and "
+            "macroeconomic conditions that could materially affect the "
+            "company's financial performance and future growth prospects.\n"
+            "\n"
+            "Liquidity and Capital Resources\n"
+            "\n"
+            "The company maintains adequate liquidity through its revolving "
+            "credit facility and commercial paper program providing access "
+            "to approximately five billion dollars across multiple sources.\n"
+        )
+        hd = HeadingDetector(min_score=3.0)
+        annotations = hd.detect(text)
+        assert len(annotations) >= 1
+        labels = " ".join(a.label for a in annotations)
+        assert "Liquidity" in labels or "Risk" in labels
+
+    def test_rejects_numeric_line(self):
+        from chunkweaver.detector_heading import HeadingDetector
+
+        text = "12,345,678\n\nSome body text follows here.\n"
+        hd = HeadingDetector(min_score=3.0)
+        annotations = hd.detect(text)
+        labels = [a.label for a in annotations]
+        assert not any("12,345" in label for label in labels)
+
+    def test_detect_with_scores_returns_candidates(self):
+        from chunkweaver.detector_heading import HeadingDetector
+
+        text = "\nOVERVIEW\n\nThis is the body text of the document.\n"
+        hd = HeadingDetector(min_score=3.0)
+        candidates = hd.detect_with_scores(text)
+        assert len(candidates) >= 1
+        assert candidates[0].score >= 3.0
+        assert candidates[0].text == "OVERVIEW"
+
+    def test_empty_text(self):
+        from chunkweaver.detector_heading import HeadingDetector
+
+        hd = HeadingDetector()
+        assert hd.detect("") == []
+        assert hd.detect_with_scores("") == []
+
+
+# ---------------------------------------------------------------------------
+# Direct unit tests for TableDetector
+# ---------------------------------------------------------------------------
+
+
+class TestTableDetectorDirect:
+    def test_detects_numeric_table(self):
+        from chunkweaver.detector_table import TableDetector
+
+        lines = [
+            "Revenue Summary",
+            "2022  2023  2024",
+            "Revenue    100,000  120,000  145,000",
+            "Costs       80,000   90,000  105,000",
+            "Profit      20,000   30,000   40,000",
+            "Margin       20.0%    25.0%    27.6%",
+            "",
+            "Notes: All figures in USD thousands.",
+        ]
+        text = "\n".join(lines)
+        td = TableDetector(min_data_lines=3)
+        annotations = td.detect(text)
+        assert len(annotations) >= 1
+        assert all(isinstance(a, KeepTogetherRegion) for a in annotations)
+
+    def test_detect_with_metadata_returns_regions(self):
+        from chunkweaver.detector_table import TableDetector
+
+        lines = [
+            "Quarterly Results",
+            "Q1      1,200   2,300",
+            "Q2      1,400   2,500",
+            "Q3      1,600   2,700",
+            "Q4      1,800   2,900",
+        ]
+        text = "\n".join(lines)
+        td = TableDetector(min_data_lines=3)
+        regions = td.detect_with_metadata(text)
+        assert len(regions) >= 1
+        r = regions[0]
+        assert r.num_data_lines >= 3
+        assert r.start_char >= 0
+        assert r.end_char > r.start_char
+
+    def test_no_table_in_prose(self):
+        from chunkweaver.detector_table import TableDetector
+
+        text = (
+            "The quick brown fox jumped over the lazy dog. "
+            "This is ordinary prose with no numeric tables.\n"
+        )
+        td = TableDetector()
+        assert td.detect(text) == []
+        assert td.detect_with_metadata(text) == []
+
+    def test_empty_text(self):
+        from chunkweaver.detector_table import TableDetector
+
+        td = TableDetector()
+        assert td.detect("") == []

@@ -1,12 +1,12 @@
 """Tests for the recommend module."""
 
-import pytest
-
 from chunkweaver.recommend import (
-    ChunkStats, OcrDamageReport, PresetMatch, Recommendation, recommend,
+    ChunkStats,
+    OcrDamageReport,
+    Recommendation,
     _detect_ocr_damage,
+    recommend,
 )
-
 
 LEGAL_EU_DOC = """\
 REGULATION (EU) 2016/679
@@ -224,7 +224,9 @@ class TestMultiPreset:
     def test_financial_combo(self):
         rec = recommend(FINANCIAL_DOC)
         if rec.recommended_preset == "financial":
-            assert "financial-table" in rec.recommended_presets or len(rec.recommended_presets) == 1
+            assert (
+                "financial-table" in rec.recommended_presets or len(rec.recommended_presets) == 1
+            )
 
     def test_recommended_presets_list(self):
         rec = recommend(LEGAL_EU_DOC)
@@ -285,10 +287,7 @@ class TestTargetSizeSuggestion:
 
     def test_dense_boundaries_lower_target(self):
         """Many boundaries in a small doc should produce a smaller target."""
-        dense = "\n".join(
-            f"Article {i}\nShort content for article {i}."
-            for i in range(1, 30)
-        )
+        dense = "\n".join(f"Article {i}\nShort content for article {i}." for i in range(1, 30))
         rec = recommend(dense)
         assert rec.suggested_target_size <= 1024
 
@@ -459,14 +458,11 @@ class TestOcrDamageDetection:
         assert 0 < report.damage_ratio <= 1.0
 
     def test_single_damaged_line_is_light(self):
-        text = (
-            "D E F I N I T I O N S\n\n"
-            + "".join(
-                f"Normal heading number {i}\n\n"
-                f"This is body text for section {i} that continues normally.\n"
-                f"Additional context paragraph for the section about topic {i}.\n\n"
-                for i in range(1, 20)
-            )
+        text = "D E F I N I T I O N S\n\n" + "".join(
+            f"Normal heading number {i}\n\n"
+            f"This is body text for section {i} that continues normally.\n"
+            f"Additional context paragraph for the section about topic {i}.\n\n"
+            for i in range(1, 20)
         )
         report = _detect_ocr_damage(text)
         assert report.level == "light"
@@ -492,12 +488,12 @@ class TestOcrInRecommendation:
         assert "OCR quality" in report
         assert "MLOCRHeadingDetector" in report
 
-    def test_damaged_doc_snippet_mentions_ml(self):
+    def test_damaged_doc_snippet_mentions_ocr(self):
         rec = recommend(OCR_DAMAGED_DOC)
         if rec.ocr_damage.recommend_ml_detector:
             snip = rec.snippet()
-            assert "MLOCRHeadingDetector" in snip
             assert "OCR damage detected" in snip
+            assert "ml-detectors" in snip
 
     def test_clean_doc_snippet_no_ml(self):
         rec = recommend(LEGAL_EU_DOC)
@@ -507,9 +503,10 @@ class TestOcrInRecommendation:
 
 class TestCliIntegration:
     def test_recommend_flag_runs(self):
-        from chunkweaver.cli import main
         import io
         import sys
+
+        from chunkweaver.cli import main
 
         captured = io.StringIO()
         old_stdout = sys.stdout
@@ -525,9 +522,10 @@ class TestCliIntegration:
         assert "Dry-run results" in output
 
     def test_recommend_from_stdin(self):
-        from chunkweaver.cli import main
         import io
         import sys
+
+        from chunkweaver.cli import main
 
         old_stdin = sys.stdin
         sys.stdin = io.StringIO(LEGAL_EU_DOC)

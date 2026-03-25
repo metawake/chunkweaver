@@ -33,6 +33,7 @@ class TestOverlapSentenceUnit:
         for c in chunks[1:]:
             if c.overlap_text:
                 from chunkweaver.sentences import split_sentences
+
                 overlap_sents = split_sentences(c.overlap_text)
                 assert len(overlap_sents) <= 2
 

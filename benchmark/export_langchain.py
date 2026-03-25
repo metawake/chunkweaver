@@ -4,9 +4,9 @@ Uses the same corpus as export_chunks.py but with LangChain's paragraph-aware
 splitter — the most common chunking approach in production RAG systems.
 """
 
-import os
 import shutil
 from pathlib import Path
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 CORPUS = Path(__file__).parent / "../benchmarks/corpus"

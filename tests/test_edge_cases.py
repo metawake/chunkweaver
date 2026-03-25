@@ -1,7 +1,5 @@
 """Edge cases: empty text, single line, huge sections, unicode, etc."""
 
-import pytest
-
 from chunkweaver import Chunk, Chunker
 
 

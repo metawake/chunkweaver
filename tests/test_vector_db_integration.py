@@ -47,7 +47,14 @@ class TestVectorDBWorkflow:
             assert isinstance(c.start, int), "Start offset required"
             assert isinstance(c.end, int), "End offset required"
             assert isinstance(c.index, int), "Index required"
-            assert c.boundary_type in ("section", "paragraph", "sentence", "word", "size", "start")
+            assert c.boundary_type in (
+                "section",
+                "paragraph",
+                "sentence",
+                "word",
+                "size",
+                "start",
+            )
 
     def test_deduplication_via_content_text(self):
         """Vector DB can deduplicate by using content_text (without overlap)."""
@@ -143,16 +150,18 @@ class TestMarkdownForVectorDB:
 
         records = []
         for c in chunks:
-            records.append({
-                "id": f"doc-1-chunk-{c.index}",
-                "text": c.text,
-                "metadata": {
-                    "start": c.start,
-                    "end": c.end,
-                    "boundary_type": c.boundary_type,
-                    "has_overlap": bool(c.overlap_text),
-                },
-            })
+            records.append(
+                {
+                    "id": f"doc-1-chunk-{c.index}",
+                    "text": c.text,
+                    "metadata": {
+                        "start": c.start,
+                        "end": c.end,
+                        "boundary_type": c.boundary_type,
+                        "has_overlap": bool(c.overlap_text),
+                    },
+                }
+            )
 
         assert len(records) > 0
         assert all("text" in r for r in records)

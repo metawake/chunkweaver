@@ -23,12 +23,11 @@ Usage::
 
 from __future__ import annotations
 
-import math
 import re
 import statistics
 from collections import Counter
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 from chunkweaver.models import Chunk
 
@@ -36,6 +35,7 @@ from chunkweaver.models import Chunk
 @dataclass
 class NearMissHeading:
     """A line that scored close to the heading threshold but was not used."""
+
     line_number: int
     text: str
     score: float
@@ -44,14 +44,16 @@ class NearMissHeading:
 @dataclass
 class PatternSuggestion:
     """A regex pattern the user might want to add as a boundary."""
+
     pattern: str
     reason: str
-    sample_matches: List[str]
+    sample_matches: list[str]
 
 
 @dataclass
 class ChunkCoherenceRating:
     """LLM coherence rating for a single chunk."""
+
     chunk_index: int
     rating: str  # "coherent", "partial", "incoherent"
     explanation: str
@@ -72,27 +74,27 @@ class InspectionReport:
     undersized_count: int
 
     # Layer 1: boundary breakdown
-    boundary_counts: Dict[str, int]
+    boundary_counts: dict[str, int]
     fallback_ratio: float  # fraction of chunks using fallback splits
 
     # Layer 1: overlap health
-    high_overlap_chunks: List[int]  # chunk indices where overlap > 40%
+    high_overlap_chunks: list[int]  # chunk indices where overlap > 40%
 
     # Layer 1: orphan chunks (heading-only, no body)
-    orphan_chunks: List[int]
+    orphan_chunks: list[int]
 
     # Layer 1: suggestions
-    suggestions: List[str]
+    suggestions: list[str]
 
     # Layer 2: near-miss headings
-    near_miss_headings: List[NearMissHeading]
+    near_miss_headings: list[NearMissHeading]
 
     # Layer 2: pattern suggestions
-    pattern_suggestions: List[PatternSuggestion]
+    pattern_suggestions: list[PatternSuggestion]
 
     # Layer 3: LLM coherence (optional)
-    coherence_ratings: Optional[List[ChunkCoherenceRating]] = None
-    coherence_summary: Optional[Dict[str, int]] = None
+    coherence_ratings: list[ChunkCoherenceRating] | None = None
+    coherence_summary: dict[str, int] | None = None
 
     target_size: int = 1024
 
@@ -102,10 +104,14 @@ class InspectionReport:
         lines.append("=== chunkweaver inspect ===\n")
 
         lines.append(f"Chunks: {self.chunk_count}")
-        lines.append(f"Sizes: avg={self.avg_size}, median={self.median_size}, "
-                     f"min={self.min_size}, max={self.max_size}")
-        lines.append(f"Size CV: {self.size_cv:.2f} "
-                     f"({'low variance' if self.size_cv < 0.3 else 'moderate' if self.size_cv < 0.6 else 'high variance'})")
+        lines.append(
+            f"Sizes: avg={self.avg_size}, median={self.median_size}, "
+            f"min={self.min_size}, max={self.max_size}"
+        )
+        lines.append(
+            f"Size CV: {self.size_cv:.2f} "
+            f"({'low variance' if self.size_cv < 0.3 else 'moderate' if self.size_cv < 0.6 else 'high variance'})"
+        )
         if self.oversized_count:
             lines.append(f"Oversized (>2x target): {self.oversized_count}")
         if self.undersized_count:
@@ -113,17 +119,14 @@ class InspectionReport:
         lines.append("")
 
         lines.append("--- Boundary breakdown ---")
-        for btype, count in sorted(self.boundary_counts.items(),
-                                   key=lambda x: x[1], reverse=True):
+        for btype, count in sorted(self.boundary_counts.items(), key=lambda x: x[1], reverse=True):
             lines.append(f"  {btype:15s} {count:3d}")
         lines.append(f"  Fallback ratio: {self.fallback_ratio:.0%}")
         lines.append("")
 
         if self.high_overlap_chunks:
             lines.append("--- Overlap health ---")
-            lines.append(
-                f"  {len(self.high_overlap_chunks)} chunks have overlap >40% of content:"
-            )
+            lines.append(f"  {len(self.high_overlap_chunks)} chunks have overlap >40% of content:")
             for idx in self.high_overlap_chunks[:5]:
                 lines.append(f"    chunk {idx}")
             if len(self.high_overlap_chunks) > 5:
@@ -132,9 +135,7 @@ class InspectionReport:
 
         if self.orphan_chunks:
             lines.append("--- Orphan chunks ---")
-            lines.append(
-                f"  {len(self.orphan_chunks)} heading-only chunks (no body content):"
-            )
+            lines.append(f"  {len(self.orphan_chunks)} heading-only chunks (no body content):")
             for idx in self.orphan_chunks[:5]:
                 lines.append(f"    chunk {idx}")
             lines.append("")
@@ -146,9 +147,7 @@ class InspectionReport:
                 f"threshold but were not used as boundaries:"
             )
             for nm in self.near_miss_headings[:5]:
-                lines.append(
-                    f"    line {nm.line_number}: {nm.text!r} (score={nm.score:.1f})"
-                )
+                lines.append(f"    line {nm.line_number}: {nm.text!r} (score={nm.score:.1f})")
             if len(self.near_miss_headings) > 5:
                 lines.append(f"    ... and {len(self.near_miss_headings) - 5} more")
             lines.append("")
@@ -171,12 +170,9 @@ class InspectionReport:
                     pct = count / total * 100 if total else 0
                     lines.append(f"  {rating:12s} {count:3d} ({pct:.0f}%)")
 
-            incoherent = [
-                r for r in self.coherence_ratings
-                if r.rating == "incoherent"
-            ]
+            incoherent = [r for r in self.coherence_ratings if r.rating == "incoherent"]
             if incoherent:
-                lines.append(f"\n  Worst chunks:")
+                lines.append("\n  Worst chunks:")
                 for r in incoherent[:5]:
                     lines.append(f"    chunk {r.chunk_index}: {r.explanation}")
             lines.append("")
@@ -204,8 +200,8 @@ _ORPHAN_MAX_WORDS = 10
 
 
 def _analyze_sizes(
-    chunks: List[Chunk], target_size: int
-) -> Tuple[int, int, int, int, float, int, int]:
+    chunks: list[Chunk], target_size: int
+) -> tuple[int, int, int, int, float, int, int]:
     """Return (avg, median, min, max, cv, oversized, undersized)."""
     sizes = [len(c.text) for c in chunks]
     if not sizes:
@@ -221,7 +217,7 @@ def _analyze_sizes(
     return avg, med, mn, mx, round(cv, 3), oversized, undersized
 
 
-def _boundary_breakdown(chunks: List[Chunk]) -> Tuple[Dict[str, int], float]:
+def _boundary_breakdown(chunks: list[Chunk]) -> tuple[dict[str, int], float]:
     """Return (counts_by_type, fallback_ratio)."""
     counts: Counter[str] = Counter()
     for c in chunks:
@@ -232,7 +228,7 @@ def _boundary_breakdown(chunks: List[Chunk]) -> Tuple[Dict[str, int], float]:
     return dict(counts), round(ratio, 3)
 
 
-def _overlap_health(chunks: List[Chunk]) -> List[int]:
+def _overlap_health(chunks: list[Chunk]) -> list[int]:
     """Return indices of chunks where overlap > 40% of total text."""
     bad = []
     for c in chunks:
@@ -243,7 +239,7 @@ def _overlap_health(chunks: List[Chunk]) -> List[int]:
     return bad
 
 
-def _detect_orphans(chunks: List[Chunk]) -> List[int]:
+def _detect_orphans(chunks: list[Chunk]) -> list[int]:
     """Return indices of heading-only chunks with no body content."""
     orphans = []
     for c in chunks:
@@ -258,14 +254,14 @@ def _detect_orphans(chunks: List[Chunk]) -> List[int]:
 
 
 def _generate_suggestions(
-    chunks: List[Chunk],
+    chunks: list[Chunk],
     target_size: int,
     fallback_ratio: float,
     oversized: int,
     undersized: int,
-    high_overlap: List[int],
-    orphans: List[int],
-) -> List[str]:
+    high_overlap: list[int],
+    orphans: list[int],
+) -> list[str]:
     """Generate actionable text suggestions."""
     suggestions: list[str] = []
 
@@ -307,12 +303,13 @@ def _generate_suggestions(
 # Layer 2: Boundary gap detection
 # -----------------------------------------------------------------------
 
+
 def _find_near_miss_headings(
     text: str,
     used_line_numbers: set[int],
     min_score: float = 3.5,
     floor_score: float = 2.0,
-) -> List[NearMissHeading]:
+) -> list[NearMissHeading]:
     """Find lines that almost qualified as headings but fell below threshold."""
     from chunkweaver.detector_heading import HeadingDetector
 
@@ -322,11 +319,13 @@ def _find_near_miss_headings(
     near_misses = []
     for c in candidates:
         if c.score < min_score and c.line_number not in used_line_numbers:
-            near_misses.append(NearMissHeading(
-                line_number=c.line_number,
-                text=c.text,
-                score=round(c.score, 2),
-            ))
+            near_misses.append(
+                NearMissHeading(
+                    line_number=c.line_number,
+                    text=c.text,
+                    score=round(c.score, 2),
+                )
+            )
 
     near_misses.sort(key=lambda nm: nm.score, reverse=True)
     return near_misses
@@ -350,8 +349,8 @@ _STRUCTURAL_PATTERNS = [
 
 def _suggest_patterns(
     text: str,
-    existing_boundaries: List[str],
-) -> List[PatternSuggestion]:
+    existing_boundaries: list[str],
+) -> list[PatternSuggestion]:
     """Scan for common structural patterns not covered by existing boundaries."""
     existing_set = set(existing_boundaries)
     suggestions: list[PatternSuggestion] = []
@@ -362,11 +361,13 @@ def _suggest_patterns(
 
         matches = re.findall(pattern, text, re.MULTILINE)
         if len(matches) >= 2:
-            suggestions.append(PatternSuggestion(
-                pattern=pattern,
-                reason=f"Found {len(matches)} {description} not covered by current boundaries",
-                sample_matches=matches[:5],
-            ))
+            suggestions.append(
+                PatternSuggestion(
+                    pattern=pattern,
+                    reason=f"Found {len(matches)} {description} not covered by current boundaries",
+                    sample_matches=matches[:5],
+                )
+            )
 
     return suggestions
 
@@ -387,22 +388,35 @@ Chunk:
 
 
 def audit_coherence(
-    chunks: List[Chunk],
+    chunks: list[Chunk],
     api_key: str,
     model: str = "gpt-4o-mini",
     max_chunks: int = 50,
-) -> Tuple[List[ChunkCoherenceRating], Dict[str, int]]:
+) -> tuple[list[ChunkCoherenceRating], dict[str, int]]:
     """Rate each chunk's semantic coherence using an LLM.
 
-    Returns (ratings, summary_counts).
+    Sends up to *max_chunks* chunk texts to the OpenAI API and
+    classifies each as ``"coherent"``, ``"partial"``, or
+    ``"incoherent"``.
+
+    Args:
+        chunks: Chunks to evaluate.
+        api_key: OpenAI API key.
+        model: Chat model to use for scoring.
+        max_chunks: Cap on the number of chunks sent to the API.
+
+    Returns:
+        A ``(ratings, summary_counts)`` tuple where *ratings* is a list
+        of per-chunk ``ChunkCoherenceRating`` objects and
+        *summary_counts* is a ``{label: count}`` dict.
+
     Requires ``openai`` package: ``pip install openai``.
     """
     try:
         from openai import OpenAI
     except ImportError:
         raise ImportError(
-            "LLM coherence audit requires the openai package. "
-            "Install with: pip install openai"
+            "LLM coherence audit requires the openai package. Install with: pip install openai"
         )
 
     client = OpenAI(api_key=api_key)
@@ -424,16 +438,18 @@ def audit_coherence(
                 rating = first_word
             else:
                 rating = "partial"
-            explanation = answer[len(first_word):].strip().lstrip(".,: ")
+            explanation = answer[len(first_word) :].strip().lstrip(".,: ")
         except Exception as e:
             rating = "partial"
             explanation = f"API error: {e}"
 
-        ratings.append(ChunkCoherenceRating(
-            chunk_index=chunk.index,
-            rating=rating,
-            explanation=explanation,
-        ))
+        ratings.append(
+            ChunkCoherenceRating(
+                chunk_index=chunk.index,
+                rating=rating,
+                explanation=explanation,
+            )
+        )
 
     summary: Counter[str] = Counter()
     for r in ratings:
@@ -446,11 +462,12 @@ def audit_coherence(
 # Main entry point
 # -----------------------------------------------------------------------
 
+
 def inspect_chunks(
-    chunks: List[Chunk],
+    chunks: list[Chunk],
     text: str,
     target_size: int = 1024,
-    boundaries: Optional[Sequence[str]] = None,
+    boundaries: Sequence[str] | None = None,
     heading_threshold: float = 3.5,
 ) -> InspectionReport:
     """Analyze chunking output and return a diagnostic report.
@@ -468,12 +485,21 @@ def inspect_chunks(
     """
     if not chunks:
         return InspectionReport(
-            chunk_count=0, avg_size=0, median_size=0, min_size=0,
-            max_size=0, size_cv=0.0, oversized_count=0, undersized_count=0,
-            boundary_counts={}, fallback_ratio=0.0,
-            high_overlap_chunks=[], orphan_chunks=[],
+            chunk_count=0,
+            avg_size=0,
+            median_size=0,
+            min_size=0,
+            max_size=0,
+            size_cv=0.0,
+            oversized_count=0,
+            undersized_count=0,
+            boundary_counts={},
+            fallback_ratio=0.0,
+            high_overlap_chunks=[],
+            orphan_chunks=[],
             suggestions=["Document produced zero chunks."],
-            near_miss_headings=[], pattern_suggestions=[],
+            near_miss_headings=[],
+            pattern_suggestions=[],
             target_size=target_size,
         )
 
@@ -483,19 +509,26 @@ def inspect_chunks(
     high_overlap = _overlap_health(chunks)
     orphans = _detect_orphans(chunks)
     suggestions = _generate_suggestions(
-        chunks, target_size, fallback_ratio,
-        oversized, undersized, high_overlap, orphans,
+        chunks,
+        target_size,
+        fallback_ratio,
+        oversized,
+        undersized,
+        high_overlap,
+        orphans,
     )
 
     # Layer 2
     used_lines: set[int] = set()
     for c in chunks:
         if c.boundary_type == "section":
-            line_no = text[:c.start].count("\n")
+            line_no = text[: c.start].count("\n")
             used_lines.add(line_no)
 
     near_misses = _find_near_miss_headings(
-        text, used_lines, min_score=heading_threshold,
+        text,
+        used_lines,
+        min_score=heading_threshold,
     )
     pattern_sugs = _suggest_patterns(text, list(boundaries or []))
 

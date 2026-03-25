@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from chunkweaver.chunker import Chunker
 
@@ -33,7 +34,7 @@ class ChunkWeaverSplitter(TextSplitter):
         target_size: int = 1024,
         overlap: int = 2,
         overlap_unit: str = "sentence",
-        boundaries: Optional[Sequence[str]] = None,
+        boundaries: Sequence[str] | None = None,
         fallback: str = "paragraph",
         min_size: int = 200,
         **kwargs: Any,
@@ -48,5 +49,6 @@ class ChunkWeaverSplitter(TextSplitter):
             min_size=min_size,
         )
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
+        """Split *text* using the chunkweaver engine, conforming to the LangChain contract."""
         return self._chunker.chunk(text)

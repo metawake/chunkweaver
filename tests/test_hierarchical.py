@@ -1,18 +1,14 @@
 """Tests for hierarchical boundary splitting and annotation ingestion."""
 
-import pytest
-
-from chunkweaver import Chunk, Chunker, SplitPoint, KeepTogetherRegion
+from chunkweaver import Chunker, KeepTogetherRegion, SplitPoint
 from chunkweaver.boundaries import BoundarySpec, detect_boundaries
 from chunkweaver.presets import (
+    FINANCIAL_LEVELED,
     LEGAL_EU,
     LEGAL_EU_LEVELED,
-    LEGAL_US_LEVELED,
-    RFC_LEVELED,
     MARKDOWN_LEVELED,
-    FINANCIAL_LEVELED,
+    RFC_LEVELED,
 )
-
 
 # -----------------------------------------------------------------------
 # Fixtures — sample documents for each domain
@@ -121,6 +117,7 @@ MARKDOWN_DOC = (
 # detect_boundaries with levels
 # -----------------------------------------------------------------------
 
+
 class TestLeveledDetection:
     def test_tuple_patterns_detected(self):
         text = "CHAPTER I\nArticle 1\nContent\nArticle 2\nMore"
@@ -155,6 +152,7 @@ class TestLeveledDetection:
 # -----------------------------------------------------------------------
 # Hierarchical chunking — legal documents
 # -----------------------------------------------------------------------
+
 
 class TestHierarchicalLegal:
     def test_small_chapter_stays_intact(self):
@@ -225,12 +223,20 @@ class TestHierarchicalLegal:
     def test_flat_legal_eu_unchanged(self):
         """Original LEGAL_EU (all level 0) should produce same result as before."""
         chunker_flat = Chunker(
-            target_size=2000, overlap=0, boundaries=LEGAL_EU, min_size=0,
+            target_size=2000,
+            overlap=0,
+            boundaries=LEGAL_EU,
+            min_size=0,
         )
         chunker_strings = Chunker(
-            target_size=2000, overlap=0,
-            boundaries=[r"^Article\s+\d+", r"^\(\d+\)\s+",
-                        r"^CHAPTER\s+[IVX\d]+", r"^SECTION\s+\d+"],
+            target_size=2000,
+            overlap=0,
+            boundaries=[
+                r"^Article\s+\d+",
+                r"^\(\d+\)\s+",
+                r"^CHAPTER\s+[IVX\d]+",
+                r"^SECTION\s+\d+",
+            ],
             min_size=0,
         )
         chunks_flat = chunker_flat.chunk(GDPR_CHAPTER)
@@ -241,6 +247,7 @@ class TestHierarchicalLegal:
 # -----------------------------------------------------------------------
 # Hierarchical chunking — RFC documents
 # -----------------------------------------------------------------------
+
 
 class TestHierarchicalRFC:
     def test_small_sections_stay_intact(self):
@@ -283,6 +290,7 @@ class TestHierarchicalRFC:
 # Hierarchical chunking — financial documents
 # -----------------------------------------------------------------------
 
+
 class TestHierarchicalFinancial:
     def test_small_part_stays_intact(self):
         chunker = Chunker(
@@ -311,6 +319,7 @@ class TestHierarchicalFinancial:
 # -----------------------------------------------------------------------
 # Hierarchical chunking — markdown documents
 # -----------------------------------------------------------------------
+
 
 class TestHierarchicalMarkdown:
     def test_h1_always_splits(self):
@@ -352,6 +361,7 @@ class TestHierarchicalMarkdown:
 # Annotation ingestion from extractors
 # -----------------------------------------------------------------------
 
+
 class TestAnnotationIngestion:
     def test_split_points_create_boundaries(self):
         text = "First section content here.\nSecond section content here.\nThird section."
@@ -389,8 +399,10 @@ class TestAnnotationIngestion:
             min_size=0,
             annotations=[
                 KeepTogetherRegion(
-                    start=table_start, end=table_end,
-                    label="table", max_overshoot=3.0,
+                    start=table_start,
+                    end=table_end,
+                    label="table",
+                    max_overshoot=3.0,
                 ),
             ],
         )
@@ -473,7 +485,9 @@ class TestAnnotationIngestion:
     def test_empty_annotations(self):
         text = "Article 1\nContent.\nArticle 2\nMore."
         chunker = Chunker(
-            target_size=5000, overlap=0, min_size=0,
+            target_size=5000,
+            overlap=0,
+            min_size=0,
             boundaries=[r"^Article\s+\d+"],
             annotations=[],
         )
@@ -485,11 +499,14 @@ class TestAnnotationIngestion:
 # Backward compatibility
 # -----------------------------------------------------------------------
 
+
 class TestBackwardCompatibility:
     def test_string_boundaries_still_work(self):
         text = "Article 1\nContent.\nArticle 2\nMore."
         chunker = Chunker(
-            target_size=5000, overlap=0, min_size=0,
+            target_size=5000,
+            overlap=0,
+            min_size=0,
             boundaries=[r"^Article\s+\d+"],
         )
         chunks = chunker.chunk(text)
@@ -498,7 +515,9 @@ class TestBackwardCompatibility:
     def test_chunk_has_boundary_level_default(self):
         text = "Article 1\nContent.\nArticle 2\nMore."
         chunker = Chunker(
-            target_size=5000, overlap=0, min_size=0,
+            target_size=5000,
+            overlap=0,
+            min_size=0,
             boundaries=[r"^Article\s+\d+"],
         )
         chunks = chunker.chunk_with_metadata(text)
@@ -523,12 +542,15 @@ class TestBackwardCompatibility:
 # Edge cases
 # -----------------------------------------------------------------------
 
+
 class TestHierarchicalEdgeCases:
     def test_only_deep_levels_no_level_zero(self):
         """When only level-1+ boundaries exist, everything starts as one segment."""
         text = "Some text.\nArticle 1\nContent.\nArticle 2\nMore."
         chunker = Chunker(
-            target_size=5000, overlap=0, min_size=0,
+            target_size=5000,
+            overlap=0,
+            min_size=0,
             boundaries=[(r"^Article\s+\d+", 1)],
         )
         chunks = chunker.chunk(text)
@@ -538,7 +560,9 @@ class TestHierarchicalEdgeCases:
     def test_deep_levels_split_when_oversized(self):
         text = "Some text.\nArticle 1\n" + "Content. " * 100 + "\nArticle 2\n" + "More. " * 100
         chunker = Chunker(
-            target_size=200, overlap=0, min_size=0,
+            target_size=200,
+            overlap=0,
+            min_size=0,
             boundaries=[(r"^Article\s+\d+", 1)],
         )
         chunks = chunker.chunk(text)
@@ -556,7 +580,9 @@ class TestHierarchicalEdgeCases:
             "Section 3\n" + "Content C. " * 10 + "\n"
         )
         chunker_big = Chunker(
-            target_size=5000, overlap=0, min_size=0,
+            target_size=5000,
+            overlap=0,
+            min_size=0,
             boundaries=[
                 (r"^PART\s+[IVX]+", 0),
                 (r"^Section\s+\d+", 1),
@@ -568,7 +594,9 @@ class TestHierarchicalEdgeCases:
         assert len(chunks_big) == 2
 
         chunker_small = Chunker(
-            target_size=400, overlap=0, min_size=0,
+            target_size=400,
+            overlap=0,
+            min_size=0,
             boundaries=[
                 (r"^PART\s+[IVX]+", 0),
                 (r"^Section\s+\d+", 1),

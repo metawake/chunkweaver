@@ -20,45 +20,70 @@ from __future__ import annotations
 import re
 import statistics
 from dataclasses import dataclass
-from typing import List, Sequence
 
 from chunkweaver.detectors import Annotation, BoundaryDetector, SplitPoint
-
 
 # ---------------------------------------------------------------------------
 # Rejection filters — lines that should never be headings
 # ---------------------------------------------------------------------------
 
-_PAGE_FOOTER_RE = re.compile(
-    r"^.{0,40}\|\s*\d{4}\s+Form\s+10-K\s*\|", re.IGNORECASE
-)
+_PAGE_FOOTER_RE = re.compile(r"^.{0,40}\|\s*\d{4}\s+Form\s+10-K\s*\|", re.IGNORECASE)
 _PAGE_NUMBER_RE = re.compile(r"^\s*\d{1,4}\s*$")
 _TABLE_OF_CONTENTS_RE = re.compile(r"^Table of Contents\s*$", re.IGNORECASE)
 _FORM_CHECKBOX_RE = re.compile(r"[☒☐]")
 _XBRL_JUNK_RE = re.compile(r"^[a-z0-9\-:]+Member|^iso4217:|^xbrli:|^us-gaap:")
 _SEPARATOR_RE = re.compile(r"^[_\-=]{3,}\s*$")
 _PHONE_RE = re.compile(r"\(\d{3}\)\s*\d{3}[\-\s]\d{4}")
-_PERSON_NAME_RE = re.compile(
-    r"^[A-Z][a-z]+\s+(?:[A-Z]\.\s+)?[A-Z][a-z]+(?:\s+\d{2,3}\s|$)"
-)
+_PERSON_NAME_RE = re.compile(r"^[A-Z][a-z]+\s+(?:[A-Z]\.\s+)?[A-Z][a-z]+(?:\s+\d{2,3}\s|$)")
 _MOSTLY_DIGITS_RE = re.compile(r"[\d$,%.()]{4,}")
 _SEC_PREFIX_RE = re.compile(
     r"^(Item\s+\d|PART\s+[IVX]|NOTE\s+\d|Schedule\s+[A-Z\d])", re.IGNORECASE
 )
 
-_NOISE_WORDS = frozenset({
-    "total", "none", "page", "nasdaq", "yes", "no", "or", "and",
-    "exhibit", "filed", "filed herewith", "furnished", "incorporated",
-    "washington", "delaware", "california", "new york",
-})
+_NOISE_WORDS = frozenset(
+    {
+        "total",
+        "none",
+        "page",
+        "nasdaq",
+        "yes",
+        "no",
+        "or",
+        "and",
+        "exhibit",
+        "filed",
+        "filed herewith",
+        "furnished",
+        "incorporated",
+        "washington",
+        "delaware",
+        "california",
+        "new york",
+    }
+)
 
 
 def _is_title_case(text: str) -> bool:
     words = text.split()
     if len(words) < 1:
         return False
-    skip = {"and", "or", "the", "of", "in", "for", "to", "a", "an",
-            "on", "at", "by", "with", "from", "&"}
+    skip = {
+        "and",
+        "or",
+        "the",
+        "of",
+        "in",
+        "for",
+        "to",
+        "a",
+        "an",
+        "on",
+        "at",
+        "by",
+        "with",
+        "from",
+        "&",
+    }
     cap_count = sum(1 for w in words if w[0].isupper() or w.lower() in skip)
     return cap_count / len(words) >= 0.7
 
@@ -78,6 +103,7 @@ def _ends_with_sentence_punct(text: str) -> bool:
 @dataclass(frozen=True)
 class HeadingCandidate:
     """Internal scoring result before conversion to SplitPoint."""
+
     line_number: int
     position: int
     text: str
@@ -107,7 +133,8 @@ class HeadingDetector(BoundaryDetector):
         self.max_heading_len = max_heading_len
         self.min_heading_len = min_heading_len
 
-    def detect(self, text: str) -> List[Annotation]:
+    def detect(self, text: str) -> list[Annotation]:
+        """Score every line and return ``SplitPoint`` annotations for probable headings."""
         candidates = self._score_lines(text)
         return [
             SplitPoint(
@@ -118,11 +145,11 @@ class HeadingDetector(BoundaryDetector):
             for c in candidates
         ]
 
-    def detect_with_scores(self, text: str) -> List[HeadingCandidate]:
+    def detect_with_scores(self, text: str) -> list[HeadingCandidate]:
         """Return raw candidates with scores (useful for debugging)."""
         return self._score_lines(text)
 
-    def _score_lines(self, text: str) -> List[HeadingCandidate]:
+    def _score_lines(self, text: str) -> list[HeadingCandidate]:
         lines = text.split("\n")
         n = len(lines)
         if n == 0:
@@ -142,7 +169,7 @@ class HeadingDetector(BoundaryDetector):
         blank_density = preceded_by_blank / max(non_empty_count, 1)
         blank_weight = 1.0 if blank_density < 0.4 else (0.3 if blank_density < 0.7 else 0.0)
 
-        candidates: List[HeadingCandidate] = []
+        candidates: list[HeadingCandidate] = []
         offset = 0
 
         for i, line in enumerate(stripped):
@@ -239,12 +266,14 @@ class HeadingDetector(BoundaryDetector):
                 signals.append("multi_word")
 
             if score >= self.min_score:
-                candidates.append(HeadingCandidate(
-                    line_number=i,
-                    position=line_start,
-                    text=line,
-                    score=score,
-                    signals=tuple(signals),
-                ))
+                candidates.append(
+                    HeadingCandidate(
+                        line_number=i,
+                        position=line_start,
+                        text=line,
+                        score=score,
+                        signals=tuple(signals),
+                    )
+                )
 
         return candidates

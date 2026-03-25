@@ -1,8 +1,6 @@
 """Tests for the CLI interface."""
 
 import json
-import os
-import tempfile
 
 from chunkweaver.cli import main
 
@@ -19,8 +17,19 @@ class TestCLIText:
         old_stdout = sys.stdout
         sys.stdout = captured
         try:
-            main([str(f), "--size", "5000", "--boundaries", r"^#{1,6}\s",
-                  "--min-size", "0", "--overlap", "0"])
+            main(
+                [
+                    str(f),
+                    "--size",
+                    "5000",
+                    "--boundaries",
+                    r"^#{1,6}\s",
+                    "--min-size",
+                    "0",
+                    "--overlap",
+                    "0",
+                ]
+            )
         finally:
             sys.stdout = old_stdout
 
@@ -62,8 +71,21 @@ class TestCLIJson:
         old_stdout = sys.stdout
         sys.stdout = captured
         try:
-            main([str(f), "--format", "jsonl", "--size", "5000",
-                  "--boundaries", r"^#{1,6}\s", "--min-size", "0", "--overlap", "0"])
+            main(
+                [
+                    str(f),
+                    "--format",
+                    "jsonl",
+                    "--size",
+                    "5000",
+                    "--boundaries",
+                    r"^#{1,6}\s",
+                    "--min-size",
+                    "0",
+                    "--overlap",
+                    "0",
+                ]
+            )
         finally:
             sys.stdout = old_stdout
 
@@ -107,8 +129,19 @@ class TestCLIPreset:
         old_stdout = sys.stdout
         sys.stdout = captured
         try:
-            main([str(f), "--preset", "markdown", "--size", "5000",
-                  "--min-size", "0", "--overlap", "0"])
+            main(
+                [
+                    str(f),
+                    "--preset",
+                    "markdown",
+                    "--size",
+                    "5000",
+                    "--min-size",
+                    "0",
+                    "--overlap",
+                    "0",
+                ]
+            )
         finally:
             sys.stdout = old_stdout
 

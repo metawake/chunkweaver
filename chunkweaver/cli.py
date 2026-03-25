@@ -1,14 +1,10 @@
-"""Command-line interface for chunkweaver.
-
-Requires the ``cli`` extra: ``pip install chunkweaver[cli]``
-"""
+"""Command-line interface for chunkweaver."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import sys
-from typing import List, Optional
 
 from chunkweaver.chunker import Chunker
 from chunkweaver.models import Chunk
@@ -26,14 +22,16 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Input file (reads from stdin if omitted).",
     )
     p.add_argument(
-        "--size", "-s",
+        "--size",
+        "-s",
         type=int,
         default=1024,
         dest="target_size",
         help="Target chunk size in characters (default: 1024).",
     )
     p.add_argument(
-        "--overlap", "-o",
+        "--overlap",
+        "-o",
         type=int,
         default=2,
         help="Number of overlap units from previous chunk (default: 2).",
@@ -45,13 +43,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Overlap unit (default: sentence).",
     )
     p.add_argument(
-        "--boundaries", "-b",
+        "--boundaries",
+        "-b",
         nargs="*",
         default=[],
         help="Regex patterns that mark section starts.",
     )
     p.add_argument(
-        "--preset", "-p",
+        "--preset",
+        "-p",
         choices=sorted(PRESETS),
         help="Use a built-in boundary preset.",
     )
@@ -68,7 +68,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Minimum chunk size in characters (default: 200).",
     )
     p.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         choices=("text", "json", "jsonl"),
         default="text",
         dest="output_format",
@@ -97,7 +98,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def _read_input(path: Optional[str]) -> str:
+def _read_input(path: str | None) -> str:
     if path:
         with open(path, encoding="utf-8") as f:
             return f.read()
@@ -115,11 +116,12 @@ def _chunk_to_dict(c: Chunk) -> dict:
     }
 
 
-def main(argv: Optional[List[str]] = None) -> None:
+def main(argv: list[str] | None = None) -> None:
+    """CLI entry point — parse args, read input, chunk or analyze, and print results."""
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    boundaries: List[str] = list(args.boundaries)
+    boundaries: list[str] = list(args.boundaries)
     if args.preset:
         boundaries = get_preset(args.preset) + boundaries
 
@@ -155,11 +157,13 @@ def main(argv: Optional[List[str]] = None) -> None:
     chunks = chunker.chunk_with_metadata(text)
 
     if args.inspect:
-        from chunkweaver.inspect import inspect_chunks, audit_coherence
         import os
 
+        from chunkweaver.inspect import audit_coherence, inspect_chunks
+
         report = inspect_chunks(
-            chunks, text,
+            chunks,
+            text,
             target_size=args.target_size,
             boundaries=boundaries,
         )
@@ -167,8 +171,10 @@ def main(argv: Optional[List[str]] = None) -> None:
         if args.llm_audit:
             api_key = os.environ.get("OPENAI_API_KEY", "")
             if not api_key:
-                print("ERROR: --llm-audit requires OPENAI_API_KEY env var.",
-                      file=sys.stderr)
+                print(
+                    "ERROR: --llm-audit requires OPENAI_API_KEY env var.",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
             ratings, summary = audit_coherence(chunks, api_key=api_key)
             report.coherence_ratings = ratings

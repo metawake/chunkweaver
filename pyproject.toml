@@ -1,13 +1,13 @@
 [project]
 name = "chunkweaver"
 version = "0.3.0"
-description = "Structure-aware text chunking for RAG. Zero dependencies."
+description = "RAG chunker that respects document structure."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
 authors = [{name = "Metawake"}]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Text Processing",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -26,12 +26,12 @@ Repository = "https://github.com/metawake/chunkweaver"
 Issues = "https://github.com/metawake/chunkweaver/issues"
 
 [project.optional-dependencies]
-cli = ["click>=8.0"]
+cli = []
 langchain = ["langchain-text-splitters>=0.2"]
 llamaindex = ["llama-index-core>=0.11"]
 dev = ["pytest>=7.0", "pytest-cov"]
 benchmark = ["sentence-transformers>=3.0,<4", "numpy>=1.24,<2"]
-all = ["click>=8.0", "langchain-text-splitters>=0.2", "llama-index-core>=0.11"]
+all = ["langchain-text-splitters>=0.2", "llama-index-core>=0.11"]
 
 [project.scripts]
 chunkweaver = "chunkweaver.cli:main"
@@ -42,6 +42,7 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--strict-markers"
 
 [tool.hatch.build.targets.wheel]
 packages = ["chunkweaver"]
@@ -65,3 +66,14 @@ exclude = [
     "chunkweaver.txt",
     ".gitignore",
 ]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 99
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["chunkweaver"]

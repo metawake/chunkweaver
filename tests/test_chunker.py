@@ -71,7 +71,9 @@ class TestBoundaryChunking:
             min_size=0,
         )
         chunks = chunker.chunk(self.GDPR_SAMPLE)
-        article_chunks = [c for c in chunks if "Article 1" in c or "Article 2" in c or "Article 3" in c]
+        article_chunks = [
+            c for c in chunks if "Article 1" in c or "Article 2" in c or "Article 3" in c
+        ]
         for c in article_chunks:
             assert c.startswith("Article")
 
@@ -124,8 +126,11 @@ class TestFallbackSplitting:
     def test_word_split_preserves_leading_whitespace(self):
         text = "Section 1\n" + "\n\n   +--------+---row1---+\n   +--------+---row2---+\n" * 50
         chunker = Chunker(
-            target_size=200, overlap=0, fallback="paragraph",
-            boundaries=[r"^Section\s+\d+"], min_size=0,
+            target_size=200,
+            overlap=0,
+            fallback="paragraph",
+            boundaries=[r"^Section\s+\d+"],
+            min_size=0,
         )
         chunks = chunker.chunk_with_metadata(text)
         reconstructed = "".join(c.content_text for c in chunks)

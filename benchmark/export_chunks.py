@@ -5,15 +5,13 @@ ragtune normalizeSource strips the directory (filepath.Base) then prefix-matches
 the stem against relevant_docs, so rfc7519_jwt_chunk_0001.txt matches rfc7519_jwt.txt.
 """
 
-import os
-import sys
-import re
 import shutil
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from chunkweaver import Chunker
-from chunkweaver.presets import RFC, LEGAL_EU, PLAIN
+from chunkweaver.presets import LEGAL_EU, PLAIN, RFC
 
 CORPUS = Path(__file__).parent / "../benchmarks/corpus"
 OUT = Path(__file__).parent / "chunks-chunkweaver"

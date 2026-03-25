@@ -18,8 +18,6 @@ from chunkweaver.boundaries import BoundarySpec, detect_boundaries
 from chunkweaver.presets import (
     FDA_LABEL,
     FDA_LABEL_LEVELED,
-    LEGAL_EU,
-    LEGAL_EU_LEVELED,
     RFC,
     RFC_LEVELED,
     SEC_10K,
@@ -27,7 +25,10 @@ from chunkweaver.presets import (
 )
 
 CORPUS_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "benchmarks", "corpus",
+    os.path.dirname(__file__),
+    "..",
+    "benchmarks",
+    "corpus",
 )
 
 # The real GDPR has leading whitespace on CHAPTER lines, so we adjust
@@ -54,6 +55,7 @@ def _load(name: str) -> str:
 # Helpers for chunk quality assertions
 # -----------------------------------------------------------------------
 
+
 def _chunk_stats(chunks):
     sizes = [len(c) for c in chunks]
     return {
@@ -69,6 +71,7 @@ def _chunk_stats(chunks):
 # -----------------------------------------------------------------------
 # GDPR (373K chars, 11 chapters, 99 articles)
 # -----------------------------------------------------------------------
+
 
 class TestGDPRHierarchical:
     @pytest.fixture(autouse=True)
@@ -122,8 +125,11 @@ class TestGDPRHierarchical:
 
     def test_overlap_works_on_real_doc(self):
         hier = Chunker(
-            target_size=2048, overlap=2, overlap_unit="sentence",
-            boundaries=LEGAL_EU_REAL_LEVELED, min_size=100,
+            target_size=2048,
+            overlap=2,
+            overlap_unit="sentence",
+            boundaries=LEGAL_EU_REAL_LEVELED,
+            min_size=100,
         )
         chunks = hier.chunk_with_metadata(self.text)
         overlap_chunks = [c for c in chunks[1:] if c.overlap_text]
@@ -139,6 +145,7 @@ class TestGDPRHierarchical:
 # -----------------------------------------------------------------------
 # EU AI Act (655K chars — largest document)
 # -----------------------------------------------------------------------
+
 
 class TestAIActHierarchical:
     @pytest.fixture(autouse=True)
@@ -161,6 +168,7 @@ class TestAIActHierarchical:
 # -----------------------------------------------------------------------
 # CCPA (172K chars — US legal, different section structure)
 # -----------------------------------------------------------------------
+
 
 class TestCCPAHierarchical:
     CCPA_LEVELED: list[BoundarySpec] = [
@@ -218,9 +226,7 @@ class TestRFCHierarchical:
         flat_count = len(flat.chunk(text))
         hier_count = len(hier.chunk(text))
         # Hierarchical should have equal or fewer chunks
-        assert hier_count <= flat_count, (
-            f"{filename}: hier={hier_count} > flat={flat_count}"
-        )
+        assert hier_count <= flat_count, f"{filename}: hier={hier_count} > flat={flat_count}"
 
     @pytest.mark.parametrize("filename", RFC_FILES)
     def test_no_empty_chunks(self, filename):
@@ -244,14 +250,13 @@ class TestRFCHierarchical:
         hier = Chunker(target_size=2048, overlap=0, boundaries=RFC_LEVELED, min_size=100)
         chunks = hier.chunk(text)
         for i, c in enumerate(chunks):
-            assert len(c) <= 2048 * 2, (
-                f"{filename} chunk {i}: {len(c)} chars > 4096 limit"
-            )
+            assert len(c) <= 2048 * 2, f"{filename} chunk {i}: {len(c)} chars > 4096 limit"
 
 
 # -----------------------------------------------------------------------
 # FDA Drug Label — medical/pharma (42K chars, 15 sections, 23 subsections)
 # -----------------------------------------------------------------------
+
 
 class TestFDALabelHierarchical:
     @pytest.fixture(autouse=True)
@@ -280,8 +285,10 @@ class TestFDALabelHierarchical:
     def test_text_preserved(self):
         for target in [1024, 2048, 4096]:
             hier = Chunker(
-                target_size=target, overlap=0,
-                boundaries=FDA_LABEL_LEVELED, min_size=0,
+                target_size=target,
+                overlap=0,
+                boundaries=FDA_LABEL_LEVELED,
+                min_size=0,
             )
             chunks = hier.chunk_with_metadata(self.text)
             reconstructed = "".join(c.content_text for c in chunks)
@@ -318,6 +325,7 @@ class TestFDALabelHierarchical:
 # SEC 10-K — financial (275K chars, 4 PARTs, 14 Items, ~40 sub-headings)
 # -----------------------------------------------------------------------
 
+
 class TestSEC10KHierarchical:
     @pytest.fixture(autouse=True)
     def load_10k(self):
@@ -347,8 +355,10 @@ class TestSEC10KHierarchical:
     def test_text_preserved(self):
         for target in [1024, 2048, 4096]:
             hier = Chunker(
-                target_size=target, overlap=0,
-                boundaries=SEC_10K_LEVELED, min_size=0,
+                target_size=target,
+                overlap=0,
+                boundaries=SEC_10K_LEVELED,
+                min_size=0,
             )
             chunks = hier.chunk_with_metadata(self.text)
             reconstructed = "".join(c.content_text for c in chunks)
@@ -376,8 +386,11 @@ class TestSEC10KHierarchical:
 
     def test_overlap_works(self):
         hier = Chunker(
-            target_size=2048, overlap=2, overlap_unit="sentence",
-            boundaries=SEC_10K_LEVELED, min_size=100,
+            target_size=2048,
+            overlap=2,
+            overlap_unit="sentence",
+            boundaries=SEC_10K_LEVELED,
+            min_size=100,
         )
         chunks = hier.chunk_with_metadata(self.text)
         overlap_chunks = [c for c in chunks[1:] if c.overlap_text]
@@ -388,23 +401,43 @@ class TestSEC10KHierarchical:
 # Cross-domain comparison: hierarchy value by document type
 # -----------------------------------------------------------------------
 
+
 class TestCrossDomainComparison:
     def test_hierarchy_reduction_across_all_domains(self):
         """Hierarchy should not increase chunk count on any domain."""
         results = []
 
         configs = [
-            ("GDPR", _load("eu_gdpr_2016_679.txt"), LEGAL_EU_REAL, LEGAL_EU_REAL_LEVELED),
+            (
+                "GDPR",
+                _load("eu_gdpr_2016_679.txt"),
+                LEGAL_EU_REAL,
+                LEGAL_EU_REAL_LEVELED,
+            ),
             ("RFC-JWT", _load("rfc7519_jwt.txt"), RFC, RFC_LEVELED),
             ("RFC-OAuth2", _load("rfc6749_oauth2.txt"), RFC, RFC_LEVELED),
             ("RFC-TLS13", _load("rfc8446_tls13.txt"), RFC, RFC_LEVELED),
-            ("FDA-Metformin", _load("fda_metformin_label.txt"), FDA_LABEL, FDA_LABEL_LEVELED),
-            ("SEC-10K-Enron", _load("sec_enron_10k_2000.txt"), SEC_10K, SEC_10K_LEVELED),
+            (
+                "FDA-Metformin",
+                _load("fda_metformin_label.txt"),
+                FDA_LABEL,
+                FDA_LABEL_LEVELED,
+            ),
+            (
+                "SEC-10K-Enron",
+                _load("sec_enron_10k_2000.txt"),
+                SEC_10K,
+                SEC_10K_LEVELED,
+            ),
         ]
 
         for name, text, flat_b, hier_b in configs:
-            flat_n = len(Chunker(target_size=4096, overlap=0, boundaries=flat_b, min_size=0).chunk(text))
-            hier_n = len(Chunker(target_size=4096, overlap=0, boundaries=hier_b, min_size=0).chunk(text))
+            flat_n = len(
+                Chunker(target_size=4096, overlap=0, boundaries=flat_b, min_size=0).chunk(text)
+            )
+            hier_n = len(
+                Chunker(target_size=4096, overlap=0, boundaries=hier_b, min_size=0).chunk(text)
+            )
             reduction = 1 - hier_n / flat_n if flat_n > 0 else 0
             results.append((name, flat_n, hier_n, reduction))
 
@@ -414,9 +447,7 @@ class TestCrossDomainComparison:
             )
 
         any_reduced = any(r > 0.05 for _, _, _, r in results)
-        assert any_reduced, (
-            f"No domain showed >5% reduction: {results}"
-        )
+        assert any_reduced, f"No domain showed >5% reduction: {results}"
 
     def test_text_preserved_all_domains(self):
         """Text perfectly preserved across all domains and target sizes."""
@@ -432,11 +463,11 @@ class TestCrossDomainComparison:
         for name, text, boundaries in configs:
             for target in [1024, 2048, 4096]:
                 chunker = Chunker(
-                    target_size=target, overlap=0,
-                    boundaries=boundaries, min_size=0,
+                    target_size=target,
+                    overlap=0,
+                    boundaries=boundaries,
+                    min_size=0,
                 )
                 chunks = chunker.chunk_with_metadata(text)
                 reconstructed = "".join(c.content_text for c in chunks)
-                assert reconstructed == text, (
-                    f"{name} at target={target}: text not preserved"
-                )
+                assert reconstructed == text, f"{name} at target={target}: text not preserved"

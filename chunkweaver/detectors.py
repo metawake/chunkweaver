@@ -20,12 +20,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Union
-
+from typing import Union
 
 # ---------------------------------------------------------------------------
 # Annotations — what detectors produce
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class SplitPoint:
@@ -79,6 +79,7 @@ Annotation = Union[SplitPoint, KeepTogetherRegion]
 # Abstract detector
 # ---------------------------------------------------------------------------
 
+
 class BoundaryDetector(ABC):
     """Abstract base class for heuristic boundary detection.
 
@@ -111,7 +112,7 @@ class BoundaryDetector(ABC):
     """
 
     @abstractmethod
-    def detect(self, text: str) -> List[Annotation]:
+    def detect(self, text: str) -> list[Annotation]:
         """Analyze *text* and return boundary annotations.
 
         Returns:

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import re
-from typing import Callable, List, Optional, Pattern, Sequence, Tuple, Union
+from collections.abc import Sequence
+from re import Pattern
 
 from chunkweaver.boundaries import (
     BoundaryMatch,
     BoundarySpec,
     detect_boundaries,
-    split_at_boundaries,
 )
 from chunkweaver.detectors import (
     Annotation,
@@ -23,7 +23,7 @@ from chunkweaver.sentences import last_n_sentences, split_sentences
 _PARAGRAPH_SEP = re.compile(r"\n\s*\n")
 
 # Internal segment: (text, boundary_type, start_offset, hierarchy_level)
-_Seg = Tuple[str, str, int, int]
+_Seg = tuple[str, str, int, int]
 
 
 class Chunker:
@@ -76,13 +76,13 @@ class Chunker:
         target_size: int = 1024,
         overlap: int = 2,
         overlap_unit: str = "sentence",
-        boundaries: Optional[Sequence[BoundarySpec]] = None,
+        boundaries: Sequence[BoundarySpec] | None = None,
         fallback: str = "paragraph",
         min_size: int = 200,
-        sentence_pattern: Union[str, Pattern[str], None] = None,
-        keep_together: Optional[Sequence[str]] = None,
-        detectors: Optional[Sequence[BoundaryDetector]] = None,
-        annotations: Optional[Sequence[Annotation]] = None,
+        sentence_pattern: str | Pattern[str] | None = None,
+        keep_together: Sequence[str] | None = None,
+        detectors: Sequence[BoundaryDetector] | None = None,
+        annotations: Sequence[Annotation] | None = None,
         concurrent: bool = False,
     ) -> None:
         if target_size < 1:
@@ -91,13 +91,11 @@ class Chunker:
             raise ValueError("overlap must be >= 0")
         if overlap_unit not in ("sentence", "paragraph", "chars"):
             raise ValueError(
-                f"overlap_unit must be 'sentence', 'paragraph', or 'chars', "
-                f"got {overlap_unit!r}"
+                f"overlap_unit must be 'sentence', 'paragraph', or 'chars', got {overlap_unit!r}"
             )
         if fallback not in ("paragraph", "sentence", "word"):
             raise ValueError(
-                f"fallback must be 'paragraph', 'sentence', or 'word', "
-                f"got {fallback!r}"
+                f"fallback must be 'paragraph', 'sentence', or 'word', got {fallback!r}"
             )
         if min_size < 0:
             raise ValueError("min_size must be >= 0")
@@ -105,28 +103,28 @@ class Chunker:
         self.target_size = target_size
         self.overlap = overlap
         self.overlap_unit = overlap_unit
-        self.boundaries: List[BoundarySpec] = list(boundaries) if boundaries else []
+        self.boundaries: list[BoundarySpec] = list(boundaries) if boundaries else []
         self.fallback = fallback
         self.min_size = min_size
 
         if isinstance(sentence_pattern, str):
-            self._sentence_re: Union[Pattern[str], None] = re.compile(sentence_pattern)
+            self._sentence_re: Pattern[str] | None = re.compile(sentence_pattern)
         else:
             self._sentence_re = sentence_pattern
 
-        self._keep_together: List[re.Pattern[str]] = []
+        self._keep_together: list[re.Pattern[str]] = []
         if keep_together:
             self._keep_together = [re.compile(p) for p in keep_together]
 
-        self._detectors: List[BoundaryDetector] = list(detectors) if detectors else []
-        self._annotations: List[Annotation] = list(annotations) if annotations else []
+        self._detectors: list[BoundaryDetector] = list(detectors) if detectors else []
+        self._annotations: list[Annotation] = list(annotations) if annotations else []
         self._concurrent = concurrent
 
-    def chunk(self, text: str) -> List[str]:
+    def chunk(self, text: str) -> list[str]:
         """Split *text* into chunks, returning a list of strings."""
         return [c.text for c in self.chunk_with_metadata(text)]
 
-    def chunk_with_metadata(self, text: str) -> List[Chunk]:
+    def chunk_with_metadata(self, text: str) -> list[Chunk]:
         """Split *text* into chunks with full metadata."""
         if not text or not text.strip():
             return []
@@ -135,7 +133,9 @@ class Chunker:
 
         if self._annotations:
             self._partition_annotations(
-                list(self._annotations), extra_boundaries, keep_regions,
+                list(self._annotations),
+                extra_boundaries,
+                keep_regions,
             )
             extra_boundaries.sort(key=lambda b: b.position)
             keep_regions.sort(key=lambda r: r.start)
@@ -151,9 +151,7 @@ class Chunker:
     # Detector integration
     # ------------------------------------------------------------------
 
-    def _run_detectors(
-        self, text: str
-    ) -> Tuple[List[BoundaryMatch], List[KeepTogetherRegion]]:
+    def _run_detectors(self, text: str) -> tuple[list[BoundaryMatch], list[KeepTogetherRegion]]:
         """Run all detectors and partition results into split points
         and keep-together regions.
 
@@ -161,28 +159,30 @@ class Chunker:
         fanned out via ``ThreadPoolExecutor`` so a slow remote detector
         doesn't block fast local ones.
         """
-        extra_boundaries: List[BoundaryMatch] = []
-        keep_regions: List[KeepTogetherRegion] = []
+        extra_boundaries: list[BoundaryMatch] = []
+        keep_regions: list[KeepTogetherRegion] = []
 
         if not self._detectors:
             return extra_boundaries, keep_regions
 
         if self._concurrent and len(self._detectors) >= 2:
             from concurrent.futures import ThreadPoolExecutor, as_completed
+
             with ThreadPoolExecutor(max_workers=len(self._detectors)) as pool:
-                futures = {
-                    pool.submit(d.detect, text): d
-                    for d in self._detectors
-                }
+                futures = {pool.submit(d.detect, text): d for d in self._detectors}
                 for future in as_completed(futures):
                     result_annotations = future.result()
                     self._partition_annotations(
-                        result_annotations, extra_boundaries, keep_regions,
+                        result_annotations,
+                        extra_boundaries,
+                        keep_regions,
                     )
         else:
             for detector in self._detectors:
                 self._partition_annotations(
-                    detector.detect(text), extra_boundaries, keep_regions,
+                    detector.detect(text),
+                    extra_boundaries,
+                    keep_regions,
                 )
 
         extra_boundaries.sort(key=lambda b: b.position)
@@ -191,20 +191,22 @@ class Chunker:
 
     @staticmethod
     def _partition_annotations(
-        annotations: List[Annotation],
-        extra_boundaries: List[BoundaryMatch],
-        keep_regions: List[KeepTogetherRegion],
+        annotations: list[Annotation],
+        extra_boundaries: list[BoundaryMatch],
+        keep_regions: list[KeepTogetherRegion],
     ) -> None:
         """Sort annotations into split points and keep-together regions."""
         for annotation in annotations:
             if isinstance(annotation, SplitPoint):
-                extra_boundaries.append(BoundaryMatch(
-                    position=annotation.position,
-                    line_number=annotation.line_number,
-                    pattern=f"[detector:{annotation.label}]",
-                    matched_text=annotation.label,
-                    level=annotation.level,
-                ))
+                extra_boundaries.append(
+                    BoundaryMatch(
+                        position=annotation.position,
+                        line_number=annotation.line_number,
+                        pattern=f"[detector:{annotation.label}]",
+                        matched_text=annotation.label,
+                        level=annotation.level,
+                    )
+                )
             elif isinstance(annotation, KeepTogetherRegion):
                 keep_regions.append(annotation)
 
@@ -215,9 +217,9 @@ class Chunker:
     def _create_segments(
         self,
         text: str,
-        extra_boundaries: Optional[List[BoundaryMatch]] = None,
-        keep_regions: Optional[List[KeepTogetherRegion]] = None,
-    ) -> List[_Seg]:
+        extra_boundaries: list[BoundaryMatch] | None = None,
+        keep_regions: list[KeepTogetherRegion] | None = None,
+    ) -> list[_Seg]:
         """Return ``(segment_text, boundary_type, start_offset, level)`` tuples.
 
         When all boundaries share the same level, every boundary
@@ -238,7 +240,8 @@ class Chunker:
 
         if keep_regions:
             boundary_matches = [
-                b for b in boundary_matches
+                b
+                for b in boundary_matches
                 if not any(r.start < b.position < r.end for r in keep_regions)
             ]
 
@@ -252,11 +255,9 @@ class Chunker:
 
         return self._split_hierarchical(text, boundary_matches, max_level)
 
-    def _split_flat(
-        self, text: str, boundaries: List[BoundaryMatch]
-    ) -> List[_Seg]:
+    def _split_flat(self, text: str, boundaries: list[BoundaryMatch]) -> list[_Seg]:
         """Split at every boundary (all same level)."""
-        segments: List[_Seg] = []
+        segments: list[_Seg] = []
 
         if boundaries[0].position > 0:
             segments.append((text[: boundaries[0].position], "start", 0, 0))
@@ -272,9 +273,9 @@ class Chunker:
     def _split_hierarchical(
         self,
         text: str,
-        boundaries: List[BoundaryMatch],
+        boundaries: list[BoundaryMatch],
         max_level: int,
-    ) -> List[_Seg]:
+    ) -> list[_Seg]:
         """Recursive descent: split at level 0, refine oversized at level 1, etc."""
         level_0 = [b for b in boundaries if b.level == 0]
 
@@ -294,12 +295,12 @@ class Chunker:
     def _refine_at_level(
         self,
         text: str,
-        segments: List[_Seg],
-        boundaries: List[BoundaryMatch],
+        segments: list[_Seg],
+        boundaries: list[BoundaryMatch],
         level: int,
-    ) -> List[_Seg]:
+    ) -> list[_Seg]:
         """Split oversized segments at boundaries of the given level."""
-        result: List[_Seg] = []
+        result: list[_Seg] = []
 
         for seg_text, seg_type, seg_start, seg_level in segments:
             if len(seg_text) <= self.target_size:
@@ -332,9 +333,9 @@ class Chunker:
 
     def _merge_small_segments(
         self,
-        segments: List[_Seg],
+        segments: list[_Seg],
         text: str,
-    ) -> List[_Seg]:
+    ) -> list[_Seg]:
         """Merge segments shorter than *min_size* with their successor.
 
         In hierarchical mode, a segment at a higher-priority level
@@ -344,7 +345,7 @@ class Chunker:
         if not segments or self.min_size <= 0:
             return segments
 
-        merged: List[_Seg] = []
+        merged: list[_Seg] = []
         i = 0
         while i < len(segments):
             seg_text, seg_type, seg_start, seg_level = segments[i]
@@ -352,10 +353,7 @@ class Chunker:
             while (
                 len(seg_text.strip()) < self.min_size
                 and i + 1 < len(segments)
-                and (
-                    segments[i + 1][1] != "section"
-                    or seg_level < segments[i + 1][3]
-                )
+                and (segments[i + 1][1] != "section" or seg_level < segments[i + 1][3])
             ):
                 i += 1
                 next_text = segments[i][0]
@@ -371,24 +369,21 @@ class Chunker:
 
     def _apply_keep_together(
         self,
-        segments: List[_Seg],
+        segments: list[_Seg],
         text: str,
-    ) -> List[_Seg]:
+    ) -> list[_Seg]:
         """Merge segments whose first line matches a keep_together pattern
         with the following segment, as long as the result fits target_size."""
         if not self._keep_together or not segments:
             return segments
 
-        merged: List[_Seg] = []
+        merged: list[_Seg] = []
         i = 0
         while i < len(segments):
             seg_text, seg_type, seg_start, seg_level = segments[i]
             first_line = seg_text.split("\n", 1)[0]
 
-            if (
-                any(p.search(first_line) for p in self._keep_together)
-                and i + 1 < len(segments)
-            ):
+            if any(p.search(first_line) for p in self._keep_together) and i + 1 < len(segments):
                 next_text = segments[i + 1][0]
                 combined = text[seg_start : segments[i + 1][2] + len(next_text)]
                 if len(combined) <= self.target_size:
@@ -406,9 +401,9 @@ class Chunker:
 
     def _subsplit_large_segments(
         self,
-        segments: List[_Seg],
-        keep_regions: Optional[List[KeepTogetherRegion]] = None,
-    ) -> List[_Seg]:
+        segments: list[_Seg],
+        keep_regions: list[KeepTogetherRegion] | None = None,
+    ) -> list[_Seg]:
         """Break segments exceeding *target_size* using the fallback strategy.
 
         When *keep_regions* are provided, the method first isolates
@@ -421,7 +416,7 @@ class Chunker:
         if regions:
             segments = self._isolate_keep_regions(segments, regions)
 
-        result: List[_Seg] = []
+        result: list[_Seg] = []
 
         for seg_text, seg_type, seg_start, seg_level in segments:
             if len(seg_text) <= self.target_size:
@@ -430,9 +425,7 @@ class Chunker:
 
             # Keep-together segments get overshoot allowance
             if seg_type == "keep_together":
-                region = self._find_covering_region(
-                    seg_start, seg_start + len(seg_text), regions
-                )
+                region = self._find_covering_region(seg_start, seg_start + len(seg_text), regions)
                 if region:
                     limit = int(self.target_size * region.max_overshoot)
                     if len(seg_text) <= limit:
@@ -454,7 +447,12 @@ class Chunker:
             if accumulated:
                 if result and len(accumulated.strip()) < self.min_size:
                     prev_text, prev_type, prev_start, prev_level = result[-1]
-                    result[-1] = (prev_text + accumulated, prev_type, prev_start, prev_level)
+                    result[-1] = (
+                        prev_text + accumulated,
+                        prev_type,
+                        prev_start,
+                        prev_level,
+                    )
                 else:
                     result.append((accumulated, self.fallback, acc_start, seg_level))
 
@@ -462,13 +460,13 @@ class Chunker:
 
     def _isolate_keep_regions(
         self,
-        segments: List[_Seg],
-        regions: List[KeepTogetherRegion],
-    ) -> List[_Seg]:
+        segments: list[_Seg],
+        regions: list[KeepTogetherRegion],
+    ) -> list[_Seg]:
         """Carve keep-together regions out of segments so they become
         their own segment entries, preventing the subsplit loop from
         splitting inside them."""
-        result: List[_Seg] = []
+        result: list[_Seg] = []
 
         for seg_text, seg_type, seg_start, seg_level in segments:
             seg_end = seg_start + len(seg_text)
@@ -509,8 +507,8 @@ class Chunker:
     def _find_covering_region(
         start: int,
         end: int,
-        regions: List[KeepTogetherRegion],
-    ) -> Optional[KeepTogetherRegion]:
+        regions: list[KeepTogetherRegion],
+    ) -> KeepTogetherRegion | None:
         """Return the keep-together region that covers ``[start, end)``."""
         for r in regions:
             if r.start <= start and r.end >= end:
@@ -520,17 +518,17 @@ class Chunker:
                 return r
         return None
 
-    def _split_by_fallback(self, text: str) -> List[str]:
+    def _split_by_fallback(self, text: str) -> list[str]:
         """Split text using the configured fallback hierarchy."""
         if self.fallback == "paragraph":
             parts = self._split_paragraphs(text)
-            refined: List[str] = []
+            refined: list[str] = []
             for p in parts:
                 if len(p) > self.target_size:
                     refined.extend(self._split_to_sentences(p))
                 else:
                     refined.append(p)
-            final: List[str] = []
+            final: list[str] = []
             for p in refined:
                 if len(p) > self.target_size:
                     final.extend(self._split_at_words(p))
@@ -551,9 +549,9 @@ class Chunker:
         return self._split_at_words(text)
 
     @staticmethod
-    def _split_paragraphs(text: str) -> List[str]:
+    def _split_paragraphs(text: str) -> list[str]:
         """Split on double-newline boundaries, preserving delimiters."""
-        parts: List[str] = []
+        parts: list[str] = []
         last = 0
         for m in _PARAGRAPH_SEP.finditer(text):
             parts.append(text[last : m.end()])
@@ -562,15 +560,16 @@ class Chunker:
             parts.append(text[last:])
         return parts or [text]
 
-    def _split_to_sentences(self, text: str) -> List[str]:
+    def _split_to_sentences(self, text: str) -> list[str]:
+        """Split *text* into sentences using the configured ``sentence_pattern``."""
         parts = split_sentences(text, pattern=self._sentence_re)
         return parts or [text]
 
     @staticmethod
-    def _split_at_words(text: str) -> List[str]:
+    def _split_at_words(text: str) -> list[str]:
         """Split at whitespace boundaries, yielding pieces that include the
         whitespace delimiter so they can be reassembled losslessly."""
-        parts: List[str] = []
+        parts: list[str] = []
         for m in re.finditer(r"\S+\s*", text):
             parts.append(m.group())
         if not parts:
@@ -586,14 +585,12 @@ class Chunker:
     # Step 5: add overlap
     # ------------------------------------------------------------------
 
-    def _add_overlap(
-        self, segments: List[_Seg]
-    ) -> List[Chunk]:
+    def _add_overlap(self, segments: list[_Seg]) -> list[Chunk]:
         """Build final Chunk objects, prepending overlap from the previous chunk."""
         if not segments:
             return []
 
-        chunks: List[Chunk] = []
+        chunks: list[Chunk] = []
         for idx, (seg_text, seg_type, seg_start, seg_level) in enumerate(segments):
             overlap_text = ""
             if idx > 0 and self.overlap > 0:
@@ -601,15 +598,17 @@ class Chunker:
                 overlap_text = self._compute_overlap(prev_text)
 
             full_text = overlap_text + seg_text if overlap_text else seg_text
-            chunks.append(Chunk(
-                text=full_text,
-                start=seg_start,
-                end=seg_start + len(seg_text),
-                index=idx,
-                boundary_type=seg_type if seg_type != "start" else "section",
-                overlap_text=overlap_text,
-                boundary_level=seg_level,
-            ))
+            chunks.append(
+                Chunk(
+                    text=full_text,
+                    start=seg_start,
+                    end=seg_start + len(seg_text),
+                    index=idx,
+                    boundary_type=seg_type if seg_type != "start" else "section",
+                    overlap_text=overlap_text,
+                    boundary_level=seg_level,
+                )
+            )
 
         return chunks
 
@@ -619,9 +618,7 @@ class Chunker:
             return ""
 
         if self.overlap_unit == "sentence":
-            return last_n_sentences(
-                previous_text, self.overlap, pattern=self._sentence_re
-            )
+            return last_n_sentences(previous_text, self.overlap, pattern=self._sentence_re)
 
         if self.overlap_unit == "paragraph":
             paras = [p for p in _PARAGRAPH_SEP.split(previous_text) if p.strip()]

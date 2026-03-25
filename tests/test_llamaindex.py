@@ -50,8 +50,8 @@ class TestChunkWeaverNodeParser:
         assert all(hasattr(n, "text") for n in nodes)
 
     def test_detectors_param_accepted(self):
-        from chunkweaver.integrations.llamaindex import ChunkWeaverNodeParser
         from chunkweaver.detector_heading import HeadingDetector
+        from chunkweaver.integrations.llamaindex import ChunkWeaverNodeParser
 
         parser = ChunkWeaverNodeParser(
             target_size=1024,

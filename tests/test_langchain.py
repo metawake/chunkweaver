@@ -4,6 +4,7 @@ import pytest
 
 try:
     from langchain_text_splitters import TextSplitter
+
     HAS_LANGCHAIN = True
 except ImportError:
     HAS_LANGCHAIN = False
