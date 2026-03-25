@@ -1,8 +1,9 @@
 """Analyze a document and recommend chunkweaver configuration.
 
 Scans text for preset pattern matches, heading/table signals,
-and basic statistics to suggest boundaries, detectors, and target_size.
-Runs a dry-run chunk to validate the recommendation.
+OCR damage indicators, and basic statistics to suggest boundaries,
+detectors, and target_size.  Runs a dry-run chunk to validate the
+recommendation.
 
 Usage::
 
@@ -28,6 +29,17 @@ from chunkweaver.presets import PRESETS
 _COMBO_PAIRS: List[Tuple[str, str]] = [
     ("financial", "financial-table"),
 ]
+
+
+@dataclass
+class OcrDamageReport:
+    """Assessment of OCR / PDF extraction quality."""
+    damaged_line_count: int
+    total_short_lines: int
+    damage_ratio: float  # damaged / total short lines
+    level: str  # "none", "light", "heavy"
+    recommend_ml_detector: bool
+    sample_lines: List[str]
 
 
 @dataclass
@@ -77,6 +89,7 @@ class Recommendation:
     suggested_target_size: int
     suggested_overlap: int
 
+    ocr_damage: Optional[OcrDamageReport] = None
     chunk_stats: Optional[ChunkStats] = None
 
     @property
@@ -131,6 +144,18 @@ class Recommendation:
             lines.append(f"  TableDetector:   not needed ({self.table_count} tables)")
         lines.append("")
 
+        if self.ocr_damage and self.ocr_damage.level != "none":
+            od = self.ocr_damage
+            lines.append("--- OCR quality ---")
+            lines.append(f"  Damage level: {od.level} "
+                         f"({od.damaged_line_count} damaged lines, "
+                         f"{od.damage_ratio:.0%} of short lines)")
+            for s in od.sample_lines[:3]:
+                lines.append(f"    e.g. {s!r}")
+            if od.recommend_ml_detector:
+                lines.append("  → Recommend MLOCRHeadingDetector (see examples/ml-detectors/)")
+            lines.append("")
+
         lines.append("--- Suggested config ---")
         lines.append(f"  target_size = {self.suggested_target_size}")
         lines.append(f"  overlap     = {self.suggested_overlap}")
@@ -163,6 +188,7 @@ class Recommendation:
         """Generate a ready-to-use Python snippet."""
         imports = ["from chunkweaver import Chunker"]
         detector_args: list[str] = []
+        comments: list[str] = []
 
         preset_consts = [
             p.upper().replace("-", "_")
@@ -173,14 +199,31 @@ class Recommendation:
             consts_str = ", ".join(preset_consts)
             imports.append(f"from chunkweaver.presets import {consts_str}")
 
-        if self.recommend_heading_detector:
+        use_ml_ocr = (
+            self.ocr_damage is not None
+            and self.ocr_damage.recommend_ml_detector
+        )
+
+        if self.recommend_heading_detector and not use_ml_ocr:
             imports.append("from chunkweaver.detector_heading import HeadingDetector")
             detector_args.append("HeadingDetector()")
+        if use_ml_ocr:
+            comments.append(
+                "# OCR damage detected — use ML heading detector\n"
+                "# pip install scikit-learn joblib\n"
+                "# See examples/ml-detectors/ocr_heading_detector/"
+            )
+            imports.append("from chunkweaver.detector_heading import HeadingDetector")
+            detector_args.append("HeadingDetector()")
+            detector_args.append("MLOCRHeadingDetector()")
         if self.recommend_table_detector:
             imports.append("from chunkweaver.detector_table import TableDetector")
             detector_args.append("TableDetector()")
 
-        parts = ["\n".join(imports), ""]
+        parts = ["\n".join(imports)]
+        if comments:
+            parts.append("\n".join(comments))
+        parts.append("")
         ctor_lines = ["chunker = Chunker("]
         ctor_lines.append(f"    target_size={self.suggested_target_size},")
         ctor_lines.append(f"    overlap={self.suggested_overlap},")
@@ -200,6 +243,77 @@ class Recommendation:
         ctor_lines.append(")")
         parts.append("\n".join(ctor_lines))
         return "\n".join(parts)
+
+
+def _detect_ocr_damage(text: str) -> OcrDamageReport:
+    """Detect OCR letterspacing artifacts in the document.
+
+    Scans short lines (likely headings/labels) for the telltale pattern:
+    abnormally high ratio of single-character alphabetic tokens.
+    ``"D E F I N I T I O N S"`` has 11 tokens, 10 are single-char.
+    Normal prose never looks like that.
+    """
+    lines = text.split("\n")
+    damaged_lines: list[str] = []
+    short_lines = 0
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or len(stripped) > 80:
+            continue
+
+        tokens = stripped.split()
+        n_tokens = len(tokens)
+        if n_tokens < 3:
+            continue
+
+        short_lines += 1
+
+        single_alpha = sum(1 for t in tokens if len(t) == 1 and t.isalpha())
+        single_ratio = single_alpha / n_tokens
+
+        # Check for partial fragmentation: many short non-common tokens
+        common_short = {
+            "the", "and", "for", "not", "but", "are", "was", "has", "its",
+            "all", "any", "can", "may", "per", "via", "our", "due", "set",
+            "no", "of", "to", "in", "on", "at", "or", "by", "is", "as",
+            "an", "be", "do", "if", "so", "up", "it", "he", "we", "a", "i",
+        }
+        fragments = sum(
+            1 for t in tokens
+            if 2 <= len(t) <= 4
+            and t.lower() not in common_short
+            and not t.isdigit()
+        )
+        fragment_ratio = fragments / n_tokens
+
+        # Letterspacing: >40% single-char alpha tokens
+        # Partial damage: >40% fragment tokens AND avg token len < 4
+        avg_token_len = sum(len(t) for t in tokens) / n_tokens
+
+        if single_ratio >= 0.4:
+            damaged_lines.append(stripped)
+        elif fragment_ratio >= 0.4 and avg_token_len < 4.0:
+            damaged_lines.append(stripped)
+
+    n_damaged = len(damaged_lines)
+    ratio = n_damaged / max(short_lines, 1)
+
+    if n_damaged == 0:
+        level = "none"
+    elif n_damaged <= 3 or ratio < 0.1:
+        level = "light"
+    else:
+        level = "heavy"
+
+    return OcrDamageReport(
+        damaged_line_count=n_damaged,
+        total_short_lines=short_lines,
+        damage_ratio=round(ratio, 3),
+        level=level,
+        recommend_ml_detector=level in ("light", "heavy"),
+        sample_lines=damaged_lines[:5],
+    )
 
 
 def _count_paragraphs(text: str) -> Tuple[int, int]:
@@ -395,6 +509,9 @@ def recommend(text: str) -> Recommendation:
     total_boundary_hits = preset_results[0].hits if preset_results else 0
     extra_bounds = _detect_extra_patterns(text)
 
+    # OCR damage assessment
+    ocr_report = _detect_ocr_damage(text)
+
     # Detectors — scale thresholds by document size
     headings_per_100 = max(line_count, 1) / 100.0
 
@@ -436,5 +553,6 @@ def recommend(text: str) -> Recommendation:
         table_samples=table_samples,
         suggested_target_size=target,
         suggested_overlap=suggested_overlap,
+        ocr_damage=ocr_report,
         chunk_stats=chunk_stats,
     )

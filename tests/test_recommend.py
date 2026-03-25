@@ -2,7 +2,10 @@
 
 import pytest
 
-from chunkweaver.recommend import ChunkStats, PresetMatch, Recommendation, recommend
+from chunkweaver.recommend import (
+    ChunkStats, OcrDamageReport, PresetMatch, Recommendation, recommend,
+    _detect_ocr_damage,
+)
 
 
 LEGAL_EU_DOC = """\
@@ -379,6 +382,127 @@ class TestSnippet:
         rec = recommend(PLAIN_DOC)
         snip = rec.snippet()
         assert "boundaries=" not in snip
+
+
+OCR_DAMAGED_DOC = """\
+D E F I N I T I O N S
+
+In this Agreement, the following terms shall have the meanings set forth below.
+"Agreement" means this Master Services Agreement including all schedules.
+"Effective Date" means the date first written above.
+
+S C O P E   O F   S E R V I C E S
+
+The Contractor shall provide to the Company the Services described in Schedule A.
+The Contractor shall perform the Services in a professional manner consistent
+with industry standards.
+
+C O M P E N S A T I O N
+
+The Company shall pay the Contractor for Services rendered at the rates
+specified in Schedule B. Payment shall be made within thirty days of receipt.
+
+T E R M   A N D   T E R M I N A T I O N
+
+This Agreement shall commence on the Effective Date and shall continue for a
+period of twelve months unless earlier terminated by either party.
+"""
+
+PARTIAL_OCR_DOC = """\
+Sect ion 1 Gene ral Prov isi ons
+
+This policy applies to all employees of the organization regardless of tenure.
+All employees are expected to familiarize themselves with this handbook.
+
+Sect ion 2 Emp loy ment Pol ici es
+
+The organization is committed to equal employment opportunity and does not
+discriminate on any basis prohibited by applicable federal or state law.
+
+Sect ion 3 Com pen sat ion
+
+Compensation is reviewed annually and adjustments are made based on
+performance evaluations, market data, and overall financial condition.
+"""
+
+
+class TestOcrDamageDetection:
+    def test_clean_doc_no_damage(self):
+        report = _detect_ocr_damage(LEGAL_EU_DOC)
+        assert report.level == "none"
+        assert report.damaged_line_count == 0
+        assert report.recommend_ml_detector is False
+
+    def test_plain_doc_no_damage(self):
+        report = _detect_ocr_damage(PLAIN_DOC)
+        assert report.level == "none"
+
+    def test_full_letterspacing_detected(self):
+        report = _detect_ocr_damage(OCR_DAMAGED_DOC)
+        assert report.level == "heavy"
+        assert report.damaged_line_count >= 4
+        assert report.recommend_ml_detector is True
+
+    def test_partial_fragmentation_detected(self):
+        report = _detect_ocr_damage(PARTIAL_OCR_DOC)
+        assert report.level in ("light", "heavy")
+        assert report.damaged_line_count >= 2
+        assert report.recommend_ml_detector is True
+
+    def test_samples_populated(self):
+        report = _detect_ocr_damage(OCR_DAMAGED_DOC)
+        assert len(report.sample_lines) > 0
+        assert any("D E F" in s or "S C O P E" in s for s in report.sample_lines)
+
+    def test_damage_ratio(self):
+        report = _detect_ocr_damage(OCR_DAMAGED_DOC)
+        assert 0 < report.damage_ratio <= 1.0
+
+    def test_single_damaged_line_is_light(self):
+        text = (
+            "D E F I N I T I O N S\n\n"
+            + "".join(
+                f"Normal heading number {i}\n\n"
+                f"This is body text for section {i} that continues normally.\n"
+                f"Additional context paragraph for the section about topic {i}.\n\n"
+                for i in range(1, 20)
+            )
+        )
+        report = _detect_ocr_damage(text)
+        assert report.level == "light"
+        assert report.damaged_line_count == 1
+
+
+class TestOcrInRecommendation:
+    def test_ocr_damage_field_present(self):
+        rec = recommend(LEGAL_EU_DOC)
+        assert rec.ocr_damage is not None
+        assert isinstance(rec.ocr_damage, OcrDamageReport)
+
+    def test_clean_doc_no_ocr_warning(self):
+        rec = recommend(LEGAL_EU_DOC)
+        assert rec.ocr_damage.level == "none"
+        report = rec.report()
+        assert "OCR quality" not in report
+
+    def test_damaged_doc_shows_ocr_section(self):
+        rec = recommend(OCR_DAMAGED_DOC)
+        assert rec.ocr_damage.level != "none"
+        report = rec.report()
+        assert "OCR quality" in report
+        assert "MLOCRHeadingDetector" in report
+
+    def test_damaged_doc_snippet_mentions_ml(self):
+        rec = recommend(OCR_DAMAGED_DOC)
+        if rec.ocr_damage.recommend_ml_detector:
+            snip = rec.snippet()
+            assert "MLOCRHeadingDetector" in snip
+            assert "OCR damage detected" in snip
+
+    def test_clean_doc_snippet_no_ml(self):
+        rec = recommend(LEGAL_EU_DOC)
+        snip = rec.snippet()
+        assert "MLOCRHeadingDetector" not in snip
 
 
 class TestCliIntegration:
