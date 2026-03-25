@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from chunkweaver import Chunker
 from chunkweaver.presets import RFC, LEGAL_EU, PLAIN
 
-CORPUS = Path(__file__).parent / "../../ragtune/benchmarks/hierarchical/corpus"
+CORPUS = Path(__file__).parent / "../benchmarks/corpus"
 OUT = Path(__file__).parent / "chunks-chunkweaver"
 
 

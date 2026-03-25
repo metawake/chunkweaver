@@ -1,13 +1,11 @@
 """Cross-domain validation of hierarchical chunking on real documents.
 
-Runs hierarchical vs flat chunking on the actual benchmark corpus
+Runs hierarchical vs flat chunking on the benchmark corpus
 (GDPR, EU AI Act, CCPA, 8 IETF RFCs, FDA drug label, SEC 10-K)
 and validates that hierarchy produces stable, coherent, correctly-sized
 results across legal, technical, medical, and financial domains.
 
-Corpus sources:
-  Legal/RFC:  ../ragtune/benchmarks/hierarchical/corpus/
-  Med/Finance: ../benchmarks/corpus/
+Corpus: benchmarks/corpus/
 """
 
 import os
@@ -29,11 +27,6 @@ from chunkweaver.presets import (
 )
 
 CORPUS_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "..",
-    "ragtune", "benchmarks", "hierarchical", "corpus",
-)
-
-LOCAL_CORPUS_DIR = os.path.join(
     os.path.dirname(__file__), "..", "benchmarks", "corpus",
 )
 
@@ -55,22 +48,6 @@ def _load(name: str) -> str:
     path = os.path.join(CORPUS_DIR, name)
     with open(path, encoding="utf-8") as f:
         return f.read()
-
-
-def _load_local(name: str) -> str:
-    path = os.path.join(LOCAL_CORPUS_DIR, name)
-    with open(path, encoding="utf-8") as f:
-        return f.read()
-
-
-def _skip_if_no_corpus():
-    if not os.path.isdir(CORPUS_DIR):
-        pytest.skip("ragtune corpus not available")
-
-
-def _skip_if_no_local_corpus():
-    if not os.path.isdir(LOCAL_CORPUS_DIR):
-        pytest.skip("local corpus not available")
 
 
 # -----------------------------------------------------------------------
@@ -96,7 +73,6 @@ def _chunk_stats(chunks):
 class TestGDPRHierarchical:
     @pytest.fixture(autouse=True)
     def load_gdpr(self):
-        _skip_if_no_corpus()
         self.text = _load("eu_gdpr_2016_679.txt")
 
     def test_flat_vs_hierarchical_chunk_count(self):
@@ -167,7 +143,6 @@ class TestGDPRHierarchical:
 class TestAIActHierarchical:
     @pytest.fixture(autouse=True)
     def load_ai_act(self):
-        _skip_if_no_corpus()
         self.text = _load("eu_ai_act_2024_1689.txt")
 
     def test_hierarchical_handles_large_document(self):
@@ -196,7 +171,6 @@ class TestCCPAHierarchical:
 
     @pytest.fixture(autouse=True)
     def load_ccpa(self):
-        _skip_if_no_corpus()
         self.text = _load("ccpa_1798.txt")
 
     def test_section_boundaries_detected(self):
@@ -234,10 +208,6 @@ RFC_FILES = [
 
 
 class TestRFCHierarchical:
-    @pytest.fixture(autouse=True)
-    def check_corpus(self):
-        _skip_if_no_corpus()
-
     @pytest.mark.parametrize("filename", RFC_FILES)
     def test_hierarchical_fewer_chunks_than_flat(self, filename):
         """Hierarchical should keep subsections inside sections when they fit."""
@@ -286,8 +256,7 @@ class TestRFCHierarchical:
 class TestFDALabelHierarchical:
     @pytest.fixture(autouse=True)
     def load_fda(self):
-        _skip_if_no_local_corpus()
-        self.text = _load_local("fda_metformin_label.txt")
+        self.text = _load("fda_metformin_label.txt")
 
     def test_boundaries_detected(self):
         matches = detect_boundaries(self.text, FDA_LABEL_LEVELED)
@@ -352,8 +321,7 @@ class TestFDALabelHierarchical:
 class TestSEC10KHierarchical:
     @pytest.fixture(autouse=True)
     def load_10k(self):
-        _skip_if_no_local_corpus()
-        self.text = _load_local("sec_enron_10k_2000.txt")
+        self.text = _load("sec_enron_10k_2000.txt")
 
     def test_boundaries_detected(self):
         matches = detect_boundaries(self.text, SEC_10K_LEVELED)
@@ -421,11 +389,6 @@ class TestSEC10KHierarchical:
 # -----------------------------------------------------------------------
 
 class TestCrossDomainComparison:
-    @pytest.fixture(autouse=True)
-    def check_corpus(self):
-        _skip_if_no_corpus()
-        _skip_if_no_local_corpus()
-
     def test_hierarchy_reduction_across_all_domains(self):
         """Hierarchy should not increase chunk count on any domain."""
         results = []
@@ -435,8 +398,8 @@ class TestCrossDomainComparison:
             ("RFC-JWT", _load("rfc7519_jwt.txt"), RFC, RFC_LEVELED),
             ("RFC-OAuth2", _load("rfc6749_oauth2.txt"), RFC, RFC_LEVELED),
             ("RFC-TLS13", _load("rfc8446_tls13.txt"), RFC, RFC_LEVELED),
-            ("FDA-Metformin", _load_local("fda_metformin_label.txt"), FDA_LABEL, FDA_LABEL_LEVELED),
-            ("SEC-10K-Enron", _load_local("sec_enron_10k_2000.txt"), SEC_10K, SEC_10K_LEVELED),
+            ("FDA-Metformin", _load("fda_metformin_label.txt"), FDA_LABEL, FDA_LABEL_LEVELED),
+            ("SEC-10K-Enron", _load("sec_enron_10k_2000.txt"), SEC_10K, SEC_10K_LEVELED),
         ]
 
         for name, text, flat_b, hier_b in configs:
@@ -462,8 +425,8 @@ class TestCrossDomainComparison:
             ("RFC-JWT", _load("rfc7519_jwt.txt"), RFC_LEVELED),
             ("RFC-OAuth2", _load("rfc6749_oauth2.txt"), RFC_LEVELED),
             ("CCPA", _load("ccpa_1798.txt"), [(r"^1798\.\d+", 0), (r"^\([a-z]\)", 1)]),
-            ("FDA-Metformin", _load_local("fda_metformin_label.txt"), FDA_LABEL_LEVELED),
-            ("SEC-10K-Enron", _load_local("sec_enron_10k_2000.txt"), SEC_10K_LEVELED),
+            ("FDA-Metformin", _load("fda_metformin_label.txt"), FDA_LABEL_LEVELED),
+            ("SEC-10K-Enron", _load("sec_enron_10k_2000.txt"), SEC_10K_LEVELED),
         ]
 
         for name, text, boundaries in configs:

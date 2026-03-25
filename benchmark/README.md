@@ -79,7 +79,7 @@ Naive chunks are generated at ingest time by ragtune (no export needed).
 
 ```bash
 RAGTUNE=../ragtune/ragtune
-CORPUS=../ragtune/benchmarks/hierarchical/corpus
+CORPUS=benchmarks/corpus
 
 # chunkweaver (pre-chunked)
 $RAGTUNE ingest benchmark/chunks-chunkweaver \

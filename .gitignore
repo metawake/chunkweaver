@@ -40,6 +40,7 @@ benchmark/chunks-legal-langchain/
 benchmark/corpus-legal/
 benchmarks/output/
 benchmarks/results.json
+benchmarks/hierarchical_results.json
 runs/
 
 # Experiment data (large files, not for distribution)

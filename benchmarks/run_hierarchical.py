@@ -12,9 +12,7 @@ Install & run:
     pip install -e .
     python benchmarks/run_hierarchical.py
 
-Corpus:
-    Legal/RFC docs:  ../ragtune/benchmarks/hierarchical/corpus/
-    Medical/Finance: benchmarks/corpus/
+Corpus: benchmarks/corpus/
 
 Results are printed to stdout and saved to benchmarks/hierarchical_results.json.
 """
@@ -45,8 +43,7 @@ from chunkweaver.presets import (
     SEC_10K_LEVELED,
 )
 
-RAGTUNE_CORPUS = PROJECT_ROOT / ".." / "ragtune" / "benchmarks" / "hierarchical" / "corpus"
-LOCAL_CORPUS = PROJECT_ROOT / "benchmarks" / "corpus"
+CORPUS_DIR = PROJECT_ROOT / "benchmarks" / "corpus"
 RESULTS_FILE = PROJECT_ROOT / "benchmarks" / "hierarchical_results.json"
 
 # GDPR has leading whitespace on CHAPTER lines — adjusted patterns
@@ -213,35 +210,31 @@ def main() -> None:
 
     configs: list[Tuple[str, str, Path, Sequence[BoundarySpec], Sequence[BoundarySpec]]] = []
 
-    # Legal (ragtune corpus)
-    if RAGTUNE_CORPUS.is_dir():
-        gdpr = RAGTUNE_CORPUS / "eu_gdpr_2016_679.txt"
-        if gdpr.exists():
-            configs.append(("EU GDPR (2016/679)", "Legal", gdpr, LEGAL_EU_REAL, LEGAL_EU_REAL_LEVELED))
+    # Legal
+    gdpr = CORPUS_DIR / "eu_gdpr_2016_679.txt"
+    if gdpr.exists():
+        configs.append(("EU GDPR (2016/679)", "Legal", gdpr, LEGAL_EU_REAL, LEGAL_EU_REAL_LEVELED))
 
-        ccpa = RAGTUNE_CORPUS / "ccpa_1798.txt"
-        if ccpa.exists():
-            configs.append(("CCPA (Cal. Civ. 1798)", "Legal", ccpa, CCPA_BOUNDARIES, CCPA_LEVELED))
+    ccpa = CORPUS_DIR / "ccpa_1798.txt"
+    if ccpa.exists():
+        configs.append(("CCPA (Cal. Civ. 1798)", "Legal", ccpa, CCPA_BOUNDARIES, CCPA_LEVELED))
 
-        ai_act = RAGTUNE_CORPUS / "eu_ai_act_2024_1689.txt"
-        if ai_act.exists():
-            configs.append(("EU AI Act (2024/1689)", "Legal", ai_act, LEGAL_EU_REAL, LEGAL_EU_REAL_LEVELED))
+    ai_act = CORPUS_DIR / "eu_ai_act_2024_1689.txt"
+    if ai_act.exists():
+        configs.append(("EU AI Act (2024/1689)", "Legal", ai_act, LEGAL_EU_REAL, LEGAL_EU_REAL_LEVELED))
 
-        # RFCs
-        for rfc_file in sorted(RAGTUNE_CORPUS.glob("rfc*.txt")):
-            label = rfc_file.stem.replace("_", " ").upper()
-            configs.append((label, "RFC", rfc_file, RFC, RFC_LEVELED))
-    else:
-        print(f"\n  WARNING: ragtune corpus not found at {RAGTUNE_CORPUS}")
-        print("  Skipping legal/RFC documents.\n")
+    # RFCs
+    for rfc_file in sorted(CORPUS_DIR.glob("rfc*.txt")):
+        label = rfc_file.stem.replace("_", " ").upper()
+        configs.append((label, "RFC", rfc_file, RFC, RFC_LEVELED))
 
-    # Medical (local corpus)
-    fda = LOCAL_CORPUS / "fda_metformin_label.txt"
+    # Medical
+    fda = CORPUS_DIR / "fda_metformin_label.txt"
     if fda.exists():
         configs.append(("FDA Metformin Label", "Medical", fda, FDA_LABEL, FDA_LABEL_LEVELED))
 
-    # Financial (local corpus)
-    sec = LOCAL_CORPUS / "sec_enron_10k_2000.txt"
+    # Financial
+    sec = CORPUS_DIR / "sec_enron_10k_2000.txt"
     if sec.exists():
         configs.append(("SEC Enron 10-K (2000)", "Financial", sec, SEC_10K, SEC_10K_LEVELED))
 
@@ -270,10 +263,10 @@ def main() -> None:
     # Also run at multiple target sizes for key documents
     print("Target size sensitivity (GDPR, RFC-JWT, FDA, SEC 10-K):")
     sensitivity_docs = [
-        ("EU GDPR", RAGTUNE_CORPUS / "eu_gdpr_2016_679.txt", LEGAL_EU_REAL, LEGAL_EU_REAL_LEVELED),
-        ("RFC-JWT", RAGTUNE_CORPUS / "rfc7519_jwt.txt", RFC, RFC_LEVELED),
-        ("FDA Label", LOCAL_CORPUS / "fda_metformin_label.txt", FDA_LABEL, FDA_LABEL_LEVELED),
-        ("SEC 10-K", LOCAL_CORPUS / "sec_enron_10k_2000.txt", SEC_10K, SEC_10K_LEVELED),
+        ("EU GDPR", CORPUS_DIR / "eu_gdpr_2016_679.txt", LEGAL_EU_REAL, LEGAL_EU_REAL_LEVELED),
+        ("RFC-JWT", CORPUS_DIR / "rfc7519_jwt.txt", RFC, RFC_LEVELED),
+        ("FDA Label", CORPUS_DIR / "fda_metformin_label.txt", FDA_LABEL, FDA_LABEL_LEVELED),
+        ("SEC 10-K", CORPUS_DIR / "sec_enron_10k_2000.txt", SEC_10K, SEC_10K_LEVELED),
     ]
     targets = [512, 1024, 2048, 4096, 8192]
 

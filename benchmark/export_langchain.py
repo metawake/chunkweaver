@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-CORPUS = Path(__file__).parent / "../../ragtune/benchmarks/hierarchical/corpus"
+CORPUS = Path(__file__).parent / "../benchmarks/corpus"
 OUT = Path(__file__).parent / "chunks-langchain"
 
 
