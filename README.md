@@ -8,6 +8,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
+<p align="center">
+  <img src="assets/fixed-vs-structure-aware.png" alt="Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections" width="480" />
+</p>
+
 ## Install
 
 ```bash
