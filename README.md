@@ -81,6 +81,24 @@ Both layers work together. Detectors can emit **split points** ("start a new chu
 - **Full metadata** — offsets, boundary types, overlap tracking
 - **Integrations** — LangChain and LlamaIndex drop-ins; Unstructured planned
 
+## FAQ — "What if I need to..."
+
+| Question | Answer |
+|----------|--------|
+| **...chunk PDFs or DOCX files?** | Yes — run your file through any extractor that outputs text/markdown (marker-pdf, docling, pdfminer, Azure Document Intelligence), then feed the result to chunkweaver. It operates on text, not file formats. |
+| **...keep tables from being split?** | Yes — `TableDetector()` marks tables as keep-together regions. The chunker won't cut inside them. See [Financial documents](#financial-documents-tables--headings). |
+| **...handle OCR-damaged headings like `D E F I N I T I O N S`?** | Yes — `chunkweaver --recommend` detects letterspacing artifacts and suggests `MLOCRHeadingDetector`. See [examples/ml-detectors/](examples/ml-detectors/). |
+| **...split on custom section markers?** | Yes — pass any regex as `boundaries=[r"^Article\s+\d+"]`. See [Custom boundaries](#custom-boundaries-for-any-domain). |
+| **...auto-detect the right config for my document?** | Yes — `chunkweaver --recommend myfile.txt` analyzes structure and suggests presets, detectors, and target size. |
+| **...use it with LangChain?** | Yes — `ChunkWeaverSplitter` is a drop-in `TextSplitter`. `pip install chunkweaver[langchain]`. |
+| **...use it with LlamaIndex?** | Yes — `ChunkWeaverNodeParser` is a drop-in `NodeParser`. `pip install chunkweaver[llamaindex]`. |
+| **...chunk Chinese / Japanese / Korean text?** | Yes — use `SENTENCE_END_CJK` for sentence splitting. See [CJK text](#chinese--japanese--korean-text). |
+| **...chunk chat logs or support transcripts?** | Yes — `CHAT` preset splits on speaker turns and timestamps. See [Chat logs](#chat-logs--customer-support-transcripts). |
+| **...chunk clinical notes?** | Yes — `CLINICAL` preset recognizes `HPI:`, `ASSESSMENT:`, `PLAN:`, etc. See [Healthcare / clinical notes](#healthcare--clinical-notes). |
+| **...write my own structure detector?** | Yes — subclass `BoundaryDetector` and return `SplitPoint` / `KeepTogetherRegion`. See [Custom detectors](#custom-detectors). |
+| **...get token counts instead of character counts?** | Not directly — `target_size` is in characters. Estimate `tokens ≈ chars / 4`. |
+| **...install any ML or NLP dependencies?** | No — core is stdlib-only. ML detectors are optional examples, not requirements. |
+
 ## Install
 
 ```bash
