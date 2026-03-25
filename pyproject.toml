@@ -61,6 +61,7 @@ exclude = [
     "assets/",
     "article-medium.md",
     "ROADMAP.md",
+    "vision.md",
     "chunkweaver.txt",
     ".gitignore",
 ]

@@ -31,11 +31,20 @@ slice of characters.
 
 ## The problem
 
-Standard chunkers — including LangChain's `RecursiveCharacterTextSplitter` —
-are paragraph-aware but not structure-aware. They don't know that
-"Article 17" starts a new legal section, or that a financial table's
-header row belongs with its data. The result: chunks that split
-mid-section, producing blurry embeddings and incomplete retrievals.
+Documents have non-uniform information density. Within a section, each
+sentence constrains the next — information is coherent. At a section
+boundary, the topic shifts — a new context begins. Standard chunkers,
+including LangChain's `RecursiveCharacterTextSplitter`, treat this
+density as uniform. They don't know that "Article 17" starts a new legal
+section, or that a financial table's header row belongs with its data.
+The result: chunks that straddle topic boundaries, producing blurry
+embeddings and incomplete retrievals.
+
+The fix is cheap: in structured documents, surface markers (headings,
+article numbers, table rules) are reliable proxies for where topics
+change. Detecting `^Article\s+\d+` costs O(n) character comparisons —
+orders of magnitude less than computing semantic boundaries from
+embeddings — and captures most of the boundary information.
 
 <p align="center">
   <img src="assets/fixed-vs-structure-aware.png" alt="Fixed-size chunking cuts through sentences; structure-aware splits follow logical sections" width="320" />
