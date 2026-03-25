@@ -56,7 +56,6 @@ include = [
     "pyproject.toml",
 ]
 exclude = [
-    "benchmark/",
     "benchmarks/",
     "experiments/",
     "assets/",

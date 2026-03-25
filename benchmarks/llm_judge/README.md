@@ -65,12 +65,12 @@ split mid-sentence.
 
 ```bash
 # chunkweaver (structure-aware)
-python benchmark/export_chunks.py
-# → benchmark/chunks-chunkweaver/
+python benchmarks/llm_judge/export_chunks.py
+# → benchmarks/llm_judge/chunks-chunkweaver/
 
 # LangChain RecursiveCharacterTextSplitter baseline
-python benchmark/export_langchain.py
-# → benchmark/chunks-langchain/
+python benchmarks/llm_judge/export_langchain.py
+# → benchmarks/llm_judge/chunks-langchain/
 ```
 
 Naive chunks are generated at ingest time by ragtune (no export needed).
@@ -82,7 +82,7 @@ RAGTUNE=../ragtune/ragtune
 CORPUS=benchmarks/corpus
 
 # chunkweaver (pre-chunked)
-$RAGTUNE ingest benchmark/chunks-chunkweaver \
+$RAGTUNE ingest benchmarks/llm_judge/chunks-chunkweaver \
   --pre-chunked \
   --collection expanded-chunkweaver \
   --embedder ollama --store qdrant
@@ -94,7 +94,7 @@ $RAGTUNE ingest "$CORPUS" \
   --embedder ollama --store qdrant
 
 # LangChain RCTS baseline (pre-chunked)
-$RAGTUNE ingest benchmark/chunks-langchain \
+$RAGTUNE ingest benchmarks/llm_judge/chunks-langchain \
   --pre-chunked \
   --collection expanded-langchain \
   --embedder ollama --store qdrant
@@ -107,14 +107,14 @@ export OPENAI_API_KEY=sk-...
 QUERIES=../ragtune/benchmarks/hierarchical/queries-expanded.json
 
 # chunkweaver vs naive
-python benchmark/llm_judge.py \
+python benchmarks/llm_judge/llm_judge.py \
   --queries "$QUERIES" \
   --cw-collection expanded-chunkweaver \
   --naive-collection expanded-naive-600 \
   --output runs/llm-judge-cw-vs-naive600.json
 
 # chunkweaver vs LangChain
-python benchmark/llm_judge.py \
+python benchmarks/llm_judge/llm_judge.py \
   --queries "$QUERIES" \
   --cw-collection expanded-chunkweaver \
   --naive-collection expanded-langchain \

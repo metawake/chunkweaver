@@ -10,6 +10,10 @@ import json
 import os
 import urllib.request
 from math import comb
+from pathlib import Path
+
+# Repo root (benchmarks/llm_judge/ → ../..)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 from openai import AsyncOpenAI
 
@@ -316,8 +320,8 @@ async def main():
         f"  {'*** SIGNIFICANT' if perm_p < 0.05 else '(not significant)'}"
     )
 
-    out_path = args.output or os.path.join(
-        os.path.dirname(__file__), f"../runs/llm-judge-top{top_k}-40q-results.json"
+    out_path = args.output or str(
+        PROJECT_ROOT / "runs" / f"llm-judge-top{top_k}-40q-results.json"
     )
     out = {
         "experiment": "llm-as-judge-answer-sufficiency",

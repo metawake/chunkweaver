@@ -33,11 +33,11 @@ htmlcov/
 *.sublime-workspace
 
 # Generated benchmark artifacts
-benchmark/chunks-chunkweaver/
-benchmark/chunks-langchain/
-benchmark/chunks-legal-cw/
-benchmark/chunks-legal-langchain/
-benchmark/corpus-legal/
+benchmarks/llm_judge/chunks-chunkweaver/
+benchmarks/llm_judge/chunks-langchain/
+benchmarks/llm_judge/chunks-legal-cw/
+benchmarks/llm_judge/chunks-legal-langchain/
+benchmarks/llm_judge/corpus-legal/
 benchmarks/output/
 benchmarks/results.json
 benchmarks/hierarchical_results.json

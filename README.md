@@ -90,7 +90,7 @@ are reliable proxies for where topics change. Detecting them costs O(n)
 character comparisons — orders of magnitude less than computing semantic
 boundaries from embeddings.
 
-Our [LLM-as-judge benchmark](benchmark/README.md) on 11 documents across
+Our [LLM-as-judge benchmark](benchmarks/llm_judge/README.md) on 11 documents across
 four domains and 58 queries:
 
 | Baseline | CW wins | Baseline wins | p-value |
@@ -98,7 +98,7 @@ four domains and 58 queries:
 | Naive 600-char | **15** | 4 | **0.019** |
 | LangChain RCTS | **11** | 4 | 0.119 |
 
-See [benchmark/](benchmark/) for full results, methodology, and reproduction steps.
+See [benchmarks/llm_judge/](benchmarks/llm_judge/) for full results, methodology, and reproduction steps.
 
 ## Features
 
@@ -258,7 +258,7 @@ for scikit-learn examples.
 - **[Cookbook](docs/cookbook.md)** — domain recipes (clinical, FDA, SEC, financial, legal, chat, CJK), hierarchical boundaries, annotation ingestion, vector DB integration, tuning tips
 - **[API Reference](docs/api.md)** — full parameter tables, `Chunk` attributes, algorithm details, architecture
 - **[FAQ](docs/faq.md)** — "What if I need to..." for common questions
-- **[Benchmark](benchmark/README.md)** — LLM-as-judge methodology, reproduction steps, raw results
+- **[Benchmark](benchmarks/llm_judge/README.md)** — LLM-as-judge methodology, reproduction steps, raw results
 
 ## Ecosystem
 

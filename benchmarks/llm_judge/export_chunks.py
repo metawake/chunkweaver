@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from chunkweaver import Chunker
 from chunkweaver.presets import LEGAL_EU, PLAIN, RFC
 
-CORPUS = Path(__file__).parent / "../benchmarks/corpus"
+CORPUS = Path(__file__).resolve().parent.parent / "corpus"
 OUT = Path(__file__).parent / "chunks-chunkweaver"
 
 

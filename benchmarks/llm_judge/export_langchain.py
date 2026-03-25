@@ -9,7 +9,7 @@ from pathlib import Path
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-CORPUS = Path(__file__).parent / "../benchmarks/corpus"
+CORPUS = Path(__file__).resolve().parent.parent / "corpus"
 OUT = Path(__file__).parent / "chunks-langchain"
 
 
