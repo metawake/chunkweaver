@@ -39,10 +39,14 @@ class TestCLIText:
         output = _capture_stdout(
             [
                 str(f),
-                "--size", "5000",
-                "--boundaries", r"^#{1,6}\s",
-                "--min-size", "0",
-                "--overlap", "0",
+                "--size",
+                "5000",
+                "--boundaries",
+                r"^#{1,6}\s",
+                "--min-size",
+                "0",
+                "--overlap",
+                "0",
             ]
         )
         assert "Title" in output
@@ -54,9 +58,7 @@ class TestCLIJson:
         f = tmp_path / "input.txt"
         f.write_text("Hello world.\n\nAnother paragraph.")
 
-        output = _capture_stdout(
-            [str(f), "--format", "json", "--size", "5000", "--overlap", "0"]
-        )
+        output = _capture_stdout([str(f), "--format", "json", "--size", "5000", "--overlap", "0"])
         data = json.loads(output)
         assert isinstance(data, list)
         assert len(data) >= 1
@@ -67,9 +69,7 @@ class TestCLIJson:
         f = tmp_path / "input.txt"
         f.write_text("Hello world.\n\nAnother paragraph.")
 
-        output = _capture_stdout(
-            [str(f), "--format", "json", "--size", "5000", "--overlap", "0"]
-        )
+        output = _capture_stdout([str(f), "--format", "json", "--size", "5000", "--overlap", "0"])
         data = json.loads(output)
         assert "boundary_level" in data[0]
 
@@ -80,11 +80,16 @@ class TestCLIJson:
         output = _capture_stdout(
             [
                 str(f),
-                "--format", "jsonl",
-                "--size", "5000",
-                "--boundaries", r"^#{1,6}\s",
-                "--min-size", "0",
-                "--overlap", "0",
+                "--format",
+                "jsonl",
+                "--size",
+                "5000",
+                "--boundaries",
+                r"^#{1,6}\s",
+                "--min-size",
+                "0",
+                "--overlap",
+                "0",
             ]
         )
         lines = output.strip().split("\n")
@@ -114,10 +119,14 @@ class TestCLIPreset:
         output = _capture_stdout(
             [
                 str(f),
-                "--preset", "markdown",
-                "--size", "5000",
-                "--min-size", "0",
-                "--overlap", "0",
+                "--preset",
+                "markdown",
+                "--size",
+                "5000",
+                "--min-size",
+                "0",
+                "--overlap",
+                "0",
             ]
         )
         assert "Heading" in output
@@ -137,11 +146,16 @@ class TestCLIExportDir:
         _capture_stderr(
             [
                 str(src),
-                "--export-dir", str(out),
-                "--boundaries", r"^#{1,6}\s",
-                "--size", "5000",
-                "--min-size", "0",
-                "--overlap", "0",
+                "--export-dir",
+                str(out),
+                "--boundaries",
+                r"^#{1,6}\s",
+                "--size",
+                "5000",
+                "--min-size",
+                "0",
+                "--overlap",
+                "0",
             ]
         )
 
@@ -180,9 +194,7 @@ class TestCLIExportDir:
         src.write_text("Some content for chunking.")
         out = tmp_path / "nested" / "chunks"
 
-        _capture_stderr(
-            [str(src), "--export-dir", str(out), "--size", "5000", "--overlap", "0"]
-        )
+        _capture_stderr([str(src), "--export-dir", str(out), "--size", "5000", "--overlap", "0"])
         assert out.is_dir()
         assert any(out.iterdir())
 
@@ -200,9 +212,7 @@ class TestCLIRecommendJson:
             "Article 2\nMore legal text about rights and duties.\n"
         )
 
-        output = _capture_stdout(
-            [str(src), "--recommend", "--format", "json"]
-        )
+        output = _capture_stdout([str(src), "--recommend", "--format", "json"])
         data = json.loads(output)
         assert "suggested_target_size" in data
         assert "recommended_presets" in data
@@ -233,9 +243,12 @@ class TestCLIInspectJson:
             [
                 str(src),
                 "--inspect",
-                "--format", "json",
-                "--size", "5000",
-                "--overlap", "0",
+                "--format",
+                "json",
+                "--size",
+                "5000",
+                "--overlap",
+                "0",
             ]
         )
         data = json.loads(output)
@@ -247,7 +260,5 @@ class TestCLIInspectJson:
         src = tmp_path / "input.txt"
         src.write_text("Hello world.\n\nAnother paragraph.\n")
 
-        output = _capture_stdout(
-            [str(src), "--inspect", "--size", "5000", "--overlap", "0"]
-        )
+        output = _capture_stdout([str(src), "--inspect", "--size", "5000", "--overlap", "0"])
         assert "chunkweaver inspect" in output
