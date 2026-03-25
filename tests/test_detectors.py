@@ -355,3 +355,87 @@ class TestDetectorEdgeCases:
         assert all(hasattr(c, "start") for c in chunks)
         assert all(hasattr(c, "end") for c in chunks)
         assert all(hasattr(c, "boundary_type") for c in chunks)
+
+
+class TestConcurrentDetectors:
+    """Tests for concurrent=True detector fan-out."""
+
+    def test_concurrent_same_results_as_serial(self):
+        text = "Intro.\n\nHEADER_A\n\nBody of section A.\n\nHEADER_B\n\nBody of section B."
+        detectors = [
+            FixedSplitDetector(["HEADER_A"]),
+            FixedSplitDetector(["HEADER_B"]),
+        ]
+
+        serial = Chunker(
+            target_size=60, overlap=0, detectors=detectors,
+            min_size=0, concurrent=False,
+        )
+        concurrent = Chunker(
+            target_size=60, overlap=0, detectors=detectors,
+            min_size=0, concurrent=True,
+        )
+
+        assert serial.chunk(text) == concurrent.chunk(text)
+
+    def test_concurrent_metadata_matches_serial(self):
+        text = "Intro.\n\nHEADER_A\n\nBody A.\n\nHEADER_B\n\nBody B."
+        detectors = [
+            FixedSplitDetector(["HEADER_A"]),
+            FixedSplitDetector(["HEADER_B"]),
+        ]
+
+        serial_chunks = Chunker(
+            target_size=60, overlap=0, detectors=detectors,
+            min_size=0, concurrent=False,
+        ).chunk_with_metadata(text)
+
+        concurrent_chunks = Chunker(
+            target_size=60, overlap=0, detectors=detectors,
+            min_size=0, concurrent=True,
+        ).chunk_with_metadata(text)
+
+        assert len(serial_chunks) == len(concurrent_chunks)
+        for s, c in zip(serial_chunks, concurrent_chunks):
+            assert s.text == c.text
+            assert s.start == c.start
+            assert s.end == c.end
+
+    def test_concurrent_with_single_detector(self):
+        text = "Intro.\n\nMARKER\n\nContent."
+        chunker = Chunker(
+            target_size=30, overlap=0,
+            detectors=[FixedSplitDetector(["MARKER"])],
+            min_size=0, concurrent=True,
+        )
+        chunks = chunker.chunk(text)
+        assert any("MARKER" in c for c in chunks)
+
+    def test_concurrent_with_no_detectors(self):
+        chunker = Chunker(target_size=100, concurrent=True)
+        chunks = chunker.chunk("Hello world.")
+        assert chunks == ["Hello world."]
+
+    def test_concurrent_with_slow_detector(self):
+        import time
+
+        class SlowDetector(BoundaryDetector):
+            def detect(self, text: str) -> List[Annotation]:
+                time.sleep(0.1)
+                return [SplitPoint(position=0, line_number=0, label="slow")]
+
+        class FastDetector(BoundaryDetector):
+            def detect(self, text: str) -> List[Annotation]:
+                return []
+
+        text = "Section A.\n\nSection B.\n\nSection C."
+        start = time.monotonic()
+        chunker = Chunker(
+            target_size=100, overlap=0,
+            detectors=[SlowDetector(), SlowDetector(), FastDetector()],
+            concurrent=True,
+        )
+        chunker.chunk(text)
+        elapsed = time.monotonic() - start
+        # Two SlowDetectors at 0.1s each; concurrent should take ~0.1s not ~0.2s
+        assert elapsed < 0.18

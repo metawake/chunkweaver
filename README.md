@@ -97,6 +97,9 @@ Both layers work together. Detectors can emit **split points** ("start a new chu
 | **...chunk clinical notes?** | Yes — `CLINICAL` preset recognizes `HPI:`, `ASSESSMENT:`, `PLAN:`, etc. See [Healthcare / clinical notes](#healthcare--clinical-notes). |
 | **...write my own structure detector?** | Yes — subclass `BoundaryDetector` and return `SplitPoint` / `KeepTogetherRegion`. See [Custom detectors](#custom-detectors). |
 | **...get token counts instead of character counts?** | Not directly — `target_size` is in characters. Estimate `tokens ≈ chars / 4`. |
+| **...check if my chunking config is good?** | Yes — `chunkweaver --inspect myfile.txt` analyzes chunk quality, flags problems (oversized chunks, high fallback ratio, orphan headings), and suggests fixes. |
+| **...get LLM-based quality feedback on chunks?** | Yes — `chunkweaver --inspect --llm-audit myfile.txt` rates each chunk's semantic coherence via GPT-4o-mini (requires `OPENAI_API_KEY`). |
+| **...call a remote ML server or API from a detector?** | Yes — `BoundaryDetector.detect()` can do anything internally (HTTP, gRPC, etc.). Use `concurrent=True` on the Chunker to fan out multiple detectors in parallel. |
 | **...install any ML or NLP dependencies?** | No — core is stdlib-only. ML detectors are optional examples, not requirements. |
 
 ## Install
@@ -647,6 +650,7 @@ chunkweaver/
 | `sentence_pattern` | `str \| Pattern \| None` | `None` | Custom regex for sentence detection (default: English) |
 | `keep_together` | `list[str] \| None` | `None` | Patterns for lines that must stay with next segment |
 | `detectors` | `list[BoundaryDetector] \| None` | `None` | Heuristic detectors for structure discovery |
+| `concurrent` | `bool` | `False` | Run detectors in parallel via `ThreadPoolExecutor` |
 
 ### `Chunker.chunk(text) → list[str]`
 

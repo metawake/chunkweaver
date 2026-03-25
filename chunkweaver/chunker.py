@@ -50,6 +50,11 @@ class Chunker:
                    boundaries; their ``KeepTogetherRegion`` annotations
                    prevent splitting inside protected ranges (allowing
                    overshoot up to each region's ``max_overshoot`` ratio).
+        concurrent: When ``True`` and multiple detectors are provided,
+                    run them in parallel via ``ThreadPoolExecutor``.
+                    Useful when one or more detectors make remote API
+                    calls or run expensive ML inference. Has no effect
+                    with zero or one detector.
     """
 
     def __init__(
@@ -63,6 +68,7 @@ class Chunker:
         sentence_pattern: Union[str, Pattern[str], None] = None,
         keep_together: Optional[Sequence[str]] = None,
         detectors: Optional[Sequence[BoundaryDetector]] = None,
+        concurrent: bool = False,
     ) -> None:
         if target_size < 1:
             raise ValueError("target_size must be >= 1")
@@ -98,6 +104,7 @@ class Chunker:
             self._keep_together = [re.compile(p) for p in keep_together]
 
         self._detectors: List[BoundaryDetector] = list(detectors) if detectors else []
+        self._concurrent = concurrent
 
     def chunk(self, text: str) -> List[str]:
         """Split *text* into chunks, returning a list of strings."""
@@ -124,25 +131,57 @@ class Chunker:
         self, text: str
     ) -> Tuple[List[BoundaryMatch], List[KeepTogetherRegion]]:
         """Run all detectors and partition results into split points
-        and keep-together regions."""
+        and keep-together regions.
+
+        When ``concurrent=True`` and there are 2+ detectors, calls are
+        fanned out via ``ThreadPoolExecutor`` so a slow remote detector
+        doesn't block fast local ones.
+        """
         extra_boundaries: List[BoundaryMatch] = []
         keep_regions: List[KeepTogetherRegion] = []
 
-        for detector in self._detectors:
-            for annotation in detector.detect(text):
-                if isinstance(annotation, SplitPoint):
-                    extra_boundaries.append(BoundaryMatch(
-                        position=annotation.position,
-                        line_number=annotation.line_number,
-                        pattern=f"[detector:{annotation.label}]",
-                        matched_text=annotation.label,
-                    ))
-                elif isinstance(annotation, KeepTogetherRegion):
-                    keep_regions.append(annotation)
+        if not self._detectors:
+            return extra_boundaries, keep_regions
+
+        if self._concurrent and len(self._detectors) >= 2:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            with ThreadPoolExecutor(max_workers=len(self._detectors)) as pool:
+                futures = {
+                    pool.submit(d.detect, text): d
+                    for d in self._detectors
+                }
+                for future in as_completed(futures):
+                    annotations = future.result()
+                    self._partition_annotations(
+                        annotations, extra_boundaries, keep_regions,
+                    )
+        else:
+            for detector in self._detectors:
+                self._partition_annotations(
+                    detector.detect(text), extra_boundaries, keep_regions,
+                )
 
         extra_boundaries.sort(key=lambda b: b.position)
         keep_regions.sort(key=lambda r: r.start)
         return extra_boundaries, keep_regions
+
+    @staticmethod
+    def _partition_annotations(
+        annotations: List[Annotation],
+        extra_boundaries: List[BoundaryMatch],
+        keep_regions: List[KeepTogetherRegion],
+    ) -> None:
+        """Sort annotations into split points and keep-together regions."""
+        for annotation in annotations:
+            if isinstance(annotation, SplitPoint):
+                extra_boundaries.append(BoundaryMatch(
+                    position=annotation.position,
+                    line_number=annotation.line_number,
+                    pattern=f"[detector:{annotation.label}]",
+                    matched_text=annotation.label,
+                ))
+            elif isinstance(annotation, KeepTogetherRegion):
+                keep_regions.append(annotation)
 
     # ------------------------------------------------------------------
     # Step 1 & 2: detect boundaries and split

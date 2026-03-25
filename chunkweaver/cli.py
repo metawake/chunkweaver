@@ -84,6 +84,16 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Analyze the document and suggest configuration.",
     )
+    p.add_argument(
+        "--inspect",
+        action="store_true",
+        help="Chunk the document, then analyze chunk quality and suggest improvements.",
+    )
+    p.add_argument(
+        "--llm-audit",
+        action="store_true",
+        help="Add LLM coherence audit to --inspect (requires OPENAI_API_KEY env var).",
+    )
     return p
 
 
@@ -143,6 +153,29 @@ def main(argv: Optional[List[str]] = None) -> None:
     )
 
     chunks = chunker.chunk_with_metadata(text)
+
+    if args.inspect:
+        from chunkweaver.inspect import inspect_chunks, audit_coherence
+        import os
+
+        report = inspect_chunks(
+            chunks, text,
+            target_size=args.target_size,
+            boundaries=boundaries,
+        )
+
+        if args.llm_audit:
+            api_key = os.environ.get("OPENAI_API_KEY", "")
+            if not api_key:
+                print("ERROR: --llm-audit requires OPENAI_API_KEY env var.",
+                      file=sys.stderr)
+                sys.exit(1)
+            ratings, summary = audit_coherence(chunks, api_key=api_key)
+            report.coherence_ratings = ratings
+            report.coherence_summary = summary
+
+        print(report.report())
+        return
 
     if args.output_format == "text":
         for i, c in enumerate(chunks):
