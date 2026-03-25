@@ -18,6 +18,8 @@ class Chunk:
                        "sentence", "word", or "size".
         overlap_text: The overlap portion prepended from the previous chunk.
                       Empty string when there is no overlap.
+        boundary_level: Hierarchy level of the boundary that started this
+                        chunk (0 = strongest boundary).
     """
 
     text: str
@@ -26,6 +28,7 @@ class Chunk:
     index: int = 0
     boundary_type: str = "section"
     overlap_text: str = ""
+    boundary_level: int = 0
 
     @property
     def content_text(self) -> str:

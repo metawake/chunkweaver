@@ -2,11 +2,18 @@
 
 Each preset is a list of regex strings matched against individual lines.
 Combine presets freely: ``boundaries = LEGAL_EU + FINANCIAL_TABLE``.
+
+**Leveled presets** (``_LEVELED`` suffix) assign hierarchy levels to each
+pattern.  Level 0 boundaries always split; level 1+ boundaries only split
+when the parent segment exceeds ``target_size``.  This keeps entire
+sections intact when they fit and progressively refines when they don't.
 """
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Tuple, Union
+
+from chunkweaver.boundaries import BoundarySpec
 
 # ---------------------------------------------------------------------------
 # Legal
@@ -92,6 +99,21 @@ FINANCIAL_TABLE: List[str] = [
     r"^[-+]{3,}",                       # ASCII table separator
 ]
 
+SEC_10K: List[str] = [
+    r"^\s*PART\s+[IVX]+\b",            # PART I, PART II (often indented)
+    r"^[Ii][Tt][Ee][Mm]\s+\d+[A-Z]?\.?\s",  # Item 1., ITEM 7A. (mixed case)
+    r"^\s{0,5}[A-Z][A-Z ]{5,}$",       # ALL-CAPS sub-headings
+]
+
+# ---------------------------------------------------------------------------
+# Healthcare / pharma
+# ---------------------------------------------------------------------------
+
+FDA_LABEL: List[str] = [
+    r"^\d+\s+[A-Z]",                   # 1 INDICATIONS AND USAGE
+    r"^##\s+\d+\.\d+\s+",             # ## 2.1 Adult Dosage
+]
+
 # ---------------------------------------------------------------------------
 # No boundaries — pure paragraph/sentence fallback
 # ---------------------------------------------------------------------------
@@ -99,10 +121,63 @@ FINANCIAL_TABLE: List[str] = [
 PLAIN: List[str] = []
 
 # ---------------------------------------------------------------------------
+# Leveled presets — hierarchical boundary priorities
+# ---------------------------------------------------------------------------
+
+LEGAL_EU_LEVELED: List[BoundarySpec] = [
+    (r"^CHAPTER\s+[IVX\d]+", 0),
+    (r"^SECTION\s+\d+", 1),
+    (r"^Article\s+\d+", 2),
+    (r"^\(\d+\)\s+", 3),
+]
+
+LEGAL_US_LEVELED: List[BoundarySpec] = [
+    (r"^PART\s+[IVX\d]+", 0),
+    (r"^§\s*\d+", 1),
+    (r"^Section\s+\d+", 1),
+    (r"^WHEREAS[,\s]", 1),
+    (r"^NOW,?\s+THEREFORE", 1),
+    (r"^\d+\.\d+\s+\S", 2),
+]
+
+RFC_LEVELED: List[BoundarySpec] = [
+    (r"^\d+\.\s+\S", 0),
+    (r"^\d+\.\d+\.?\s+\S", 1),
+    (r"^Appendix\s+[A-Z]", 0),
+]
+
+MARKDOWN_LEVELED: List[BoundarySpec] = [
+    (r"^#\s", 0),
+    (r"^##\s", 1),
+    (r"^###\s", 2),
+    (r"^#{4,6}\s", 3),
+    (r"^---\s*$", 0),
+]
+
+FINANCIAL_LEVELED: List[BoundarySpec] = [
+    (r"^PART\s+[IVX]+\b", 0),
+    (r"^Item\s+\d+[A-Z]?\.?\s", 1),
+    (r"^NOTE\s+\d+", 1),
+    (r"^Schedule\s+[A-Z\d]+", 1),
+    (r"^TABLE\s+\d+", 2),
+]
+
+SEC_10K_LEVELED: List[BoundarySpec] = [
+    (r"^\s*PART\s+[IVX]+\b", 0),
+    (r"^[Ii][Tt][Ee][Mm]\s+\d+[A-Z]?\.?\s", 1),
+    (r"^\s{0,5}[A-Z][A-Z ]{5,}$", 2),
+]
+
+FDA_LABEL_LEVELED: List[BoundarySpec] = [
+    (r"^\d+\s+[A-Z]", 0),
+    (r"^##\s+\d+\.\d+\s+", 1),
+]
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
-PRESETS: Dict[str, List[str]] = {
+PRESETS: Dict[str, List[BoundarySpec]] = {
     "legal-eu": LEGAL_EU,
     "legal-us": LEGAL_US,
     "rfc": RFC,
@@ -111,16 +186,35 @@ PRESETS: Dict[str, List[str]] = {
     "clinical": CLINICAL,
     "financial": FINANCIAL,
     "financial-table": FINANCIAL_TABLE,
+    "sec-10k": SEC_10K,
+    "fda-label": FDA_LABEL,
     "plain": PLAIN,
 }
 
+PRESETS_LEVELED: Dict[str, List[BoundarySpec]] = {
+    "legal-eu": LEGAL_EU_LEVELED,
+    "legal-us": LEGAL_US_LEVELED,
+    "rfc": RFC_LEVELED,
+    "markdown": MARKDOWN_LEVELED,
+    "financial": FINANCIAL_LEVELED,
+    "sec-10k": SEC_10K_LEVELED,
+    "fda-label": FDA_LABEL_LEVELED,
+}
 
-def get_preset(name: str) -> List[str]:
+
+def get_preset(name: str, leveled: bool = False) -> List[BoundarySpec]:
     """Return boundary patterns for a named preset.
+
+    Args:
+        name: Preset name (e.g. ``"legal-eu"``, ``"rfc"``).
+        leveled: If ``True``, return the hierarchical version when
+                 available.  Falls back to the flat preset otherwise.
 
     Raises ``ValueError`` for unknown preset names.
     """
     key = name.lower().replace("_", "-")
+    if leveled and key in PRESETS_LEVELED:
+        return list(PRESETS_LEVELED[key])
     if key not in PRESETS:
         available = ", ".join(sorted(PRESETS))
         raise ValueError(f"Unknown preset {name!r}. Available: {available}")

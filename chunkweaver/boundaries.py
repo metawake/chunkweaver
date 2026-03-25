@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, Union
+
+
+BoundarySpec = Union[str, Tuple[str, int]]
+"""A boundary pattern: either a plain regex string (level 0) or a
+``(regex, level)`` tuple for hierarchical splitting."""
 
 
 @dataclass(frozen=True)
@@ -15,27 +20,37 @@ class BoundaryMatch:
     line_number: int       # 0-based line index
     pattern: str           # the regex pattern that matched
     matched_text: str      # the actual text that matched
+    level: int = 0         # hierarchy level (0 = strongest boundary)
 
 
 def detect_boundaries(
     text: str,
-    patterns: Sequence[str],
+    patterns: Sequence[BoundarySpec],
 ) -> List[BoundaryMatch]:
     """Find all lines in *text* that match any boundary *pattern*.
 
+    Each pattern is either a regex string (treated as level 0) or a
+    ``(regex, level)`` tuple for hierarchical boundary detection.
     Patterns are tested in order; first match wins for each line.
     Returns matches sorted by position.
     """
     if not patterns or not text:
         return []
 
-    compiled = [(p, re.compile(p, re.MULTILINE)) for p in patterns]
+    compiled: List[Tuple[str, re.Pattern[str], int]] = []
+    for p in patterns:
+        if isinstance(p, tuple):
+            pat_str, level = p
+        else:
+            pat_str, level = p, 0
+        compiled.append((pat_str, re.compile(pat_str, re.MULTILINE), level))
+
     matches: List[BoundaryMatch] = []
     seen_positions: set = set()
 
     offset = 0
     for line_no, line in enumerate(text.split("\n")):
-        for pat_str, pat_re in compiled:
+        for pat_str, pat_re, level in compiled:
             m = pat_re.search(line)
             if m and offset not in seen_positions:
                 matches.append(BoundaryMatch(
@@ -43,6 +58,7 @@ def detect_boundaries(
                     line_number=line_no,
                     pattern=pat_str,
                     matched_text=m.group(),
+                    level=level,
                 ))
                 seen_positions.add(offset)
                 break  # first match wins

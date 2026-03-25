@@ -38,11 +38,14 @@ class SplitPoint:
         position: Character offset of the line start in the source text.
         line_number: Zero-based line index.
         label: Human-readable description, e.g. ``"heading: Revenue"``.
+        level: Hierarchy level (0 = strongest). Higher levels only split
+               when the parent segment exceeds ``target_size``.
     """
 
     position: int
     line_number: int
     label: str = ""
+    level: int = 0
 
 
 @dataclass(frozen=True)

@@ -121,6 +121,23 @@ class TestFallbackSplitting:
         chunks = chunker.chunk(text)
         assert len(chunks) > 1
 
+    def test_word_split_preserves_leading_whitespace(self):
+        text = "Section 1\n" + "\n\n   +--------+---row1---+\n   +--------+---row2---+\n" * 50
+        chunker = Chunker(
+            target_size=200, overlap=0, fallback="paragraph",
+            boundaries=[r"^Section\s+\d+"], min_size=0,
+        )
+        chunks = chunker.chunk_with_metadata(text)
+        reconstructed = "".join(c.content_text for c in chunks)
+        assert reconstructed == text
+
+    def test_subsplit_lossless_roundtrip(self):
+        text = "   indented start " + "word " * 100 + "\n\n   more indented"
+        chunker = Chunker(target_size=100, overlap=0, fallback="word", min_size=0)
+        chunks = chunker.chunk_with_metadata(text)
+        reconstructed = "".join(c.content_text for c in chunks)
+        assert reconstructed == text
+
     def test_oversized_section_gets_subsplit(self):
         long_article = "Article 1\n" + ("Content sentence. " * 200)
         text = long_article + "\nArticle 2\nShort content."

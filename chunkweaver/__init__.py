@@ -3,6 +3,7 @@
 Zero-dependency Python chunker that respects document structure.
 """
 
+from chunkweaver.boundaries import BoundarySpec
 from chunkweaver.chunker import Chunker
 from chunkweaver.detectors import (
     Annotation,
@@ -15,6 +16,7 @@ from chunkweaver.models import Chunk
 from chunkweaver.sentences import SENTENCE_END, SENTENCE_END_CJK, SENTENCE_END_PERMISSIVE
 
 __all__ = [
+    "BoundarySpec",
     "Chunker",
     "Chunk",
     "BoundaryDetector",
@@ -27,4 +29,4 @@ __all__ = [
     "SENTENCE_END_CJK",
     "SENTENCE_END_PERMISSIVE",
 ]
-__version__ = "0.2.3"
+__version__ = "0.3.0"
