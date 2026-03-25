@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
+import os
 import sys
+from pathlib import Path
 
 from chunkweaver.chunker import Chunker
 from chunkweaver.models import Chunk
@@ -95,6 +98,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Add LLM coherence audit to --inspect (requires OPENAI_API_KEY env var).",
     )
+    p.add_argument(
+        "--export-dir",
+        metavar="PATH",
+        help="Write one .txt file per chunk into PATH (for ragtune --pre-chunked).",
+    )
     return p
 
 
@@ -112,8 +120,31 @@ def _chunk_to_dict(c: Chunk) -> dict:
         "start": c.start,
         "end": c.end,
         "boundary_type": c.boundary_type,
+        "boundary_level": c.boundary_level,
         "overlap_text": c.overlap_text,
     }
+
+
+def _export_chunks(chunks: list[Chunk], export_dir: str) -> None:
+    """Write one .txt file per chunk into *export_dir*."""
+    dirpath = Path(export_dir)
+    dirpath.mkdir(parents=True, exist_ok=True)
+    existing = list(dirpath.iterdir())
+    if existing:
+        print(
+            f"ERROR: --export-dir target is not empty: {dirpath}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    for c in chunks:
+        filename = dirpath / f"chunk-{c.index:04d}.txt"
+        filename.write_text(c.text, encoding="utf-8")
+    print(f"Exported {len(chunks)} chunks to {dirpath}/", file=sys.stderr)
+
+
+def _serialize_dataclass(obj: object) -> str:
+    """Serialize a dataclass (with nested dataclasses) to JSON."""
+    return json.dumps(dataclasses.asdict(obj), indent=2, default=str)  # type: ignore[arg-type]
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -131,7 +162,10 @@ def main(argv: list[str] | None = None) -> None:
         from chunkweaver.recommend import recommend
 
         rec = recommend(text)
-        print(rec.report())
+        if args.output_format == "json":
+            print(_serialize_dataclass(rec))
+        else:
+            print(rec.report())
         return
 
     if args.detect_boundaries:
@@ -156,9 +190,11 @@ def main(argv: list[str] | None = None) -> None:
 
     chunks = chunker.chunk_with_metadata(text)
 
-    if args.inspect:
-        import os
+    if args.export_dir:
+        _export_chunks(chunks, args.export_dir)
+        return
 
+    if args.inspect:
         from chunkweaver.inspect import audit_coherence, inspect_chunks
 
         report = inspect_chunks(
@@ -180,7 +216,10 @@ def main(argv: list[str] | None = None) -> None:
             report.coherence_ratings = ratings
             report.coherence_summary = summary
 
-        print(report.report())
+        if args.output_format == "json":
+            print(_serialize_dataclass(report))
+        else:
+            print(report.report())
         return
 
     if args.output_format == "text":

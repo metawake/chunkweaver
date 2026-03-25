@@ -498,3 +498,76 @@ chunkweaver doc.txt --detect-boundaries --boundaries "^Article\s+\d+"
 # line 5: [^Article\s+\d+] 'Article 1'
 # line 23: [^Article\s+\d+] 'Article 2'
 ```
+
+## Ecosystem: ragtune pipeline
+
+chunkweaver's `--export-dir` writes one `.txt` file per chunk — the exact
+format [ragtune](https://github.com/metawake/ragtune) expects for
+`--pre-chunked` ingestion. Three commands, no glue script:
+
+```bash
+# 1. Chunk with structure-aware boundaries
+chunkweaver legal_doc.txt --preset legal-eu --export-dir ./chunks/
+
+# 2. Embed and upsert into your vector DB
+ragtune ingest ./chunks/ --pre-chunked --collection legal --embedder ollama
+
+# 3. Measure retrieval quality
+ragtune simulate --collection legal --queries golden.json
+```
+
+Compare two configs side by side:
+
+```bash
+chunkweaver doc.txt --preset legal-eu --size 1024 --export-dir ./chunks-1k/
+chunkweaver doc.txt --preset legal-eu --size 512  --export-dir ./chunks-512/
+
+ragtune ingest ./chunks-1k/  --pre-chunked --collection a --embedder ollama
+ragtune ingest ./chunks-512/ --pre-chunked --collection b --embedder ollama
+
+ragtune compare --collections a,b --queries golden.json
+```
+
+Use `--format json` on any chunkweaver command to get machine-readable
+output for CI pipelines:
+
+```bash
+chunkweaver doc.txt --recommend --format json | jq .suggested_target_size
+chunkweaver doc.txt --preset legal-eu --inspect --format json | jq .fallback_ratio
+```
+
+## Ecosystem: ragprobe on chunks
+
+[ragprobe](https://github.com/metawake/ragprobe) measures domain difficulty
+— how hard retrieval will be — using vocabulary specificity. Feed it your
+**chunks** instead of raw documents to see whether your chunking strategy
+improves or hurts term discrimination:
+
+```python
+from chunkweaver import Chunker
+from chunkweaver.presets import LEGAL_EU
+from ragprobe import DomainProbe
+
+text = open("regulation.txt").read()
+queries = ["What is the right to erasure?", "Who is the data controller?"]
+
+# Score raw document (paragraph-level passages)
+raw_report = DomainProbe(corpus=[text], queries=queries).score()
+
+# Score after chunking
+chunker = Chunker(target_size=1024, boundaries=LEGAL_EU)
+chunks = chunker.chunk(text)
+chunked_report = DomainProbe(corpus=chunks, queries=queries).score()
+
+print(f"Raw specificity:     {raw_report.specificity:.2f} ({raw_report.difficulty})")
+print(f"Chunked specificity: {chunked_report.specificity:.2f} ({chunked_report.difficulty})")
+```
+
+If chunked specificity is **higher**, your chunking is producing more
+discriminative passages — queries map to fewer, more specific chunks.
+If it's **lower**, your chunks may be too small (fragmenting key terms
+across boundaries) or too large (diluting specificity).
+
+This runs in seconds with no embeddings or vector DB — pure lexical
+analysis. Use it as a fast dev-time sanity check before committing to
+a full embedding pipeline.

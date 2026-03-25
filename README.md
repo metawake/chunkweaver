@@ -258,7 +258,7 @@ for scikit-learn examples.
 
 ## Ecosystem
 
-chunkweaver is part of a retrieval quality toolkit:
+Part of a RAG tools suite for retrieval quality:
 
 | Tool | Role | What it measures |
 |------|------|-----------------|
@@ -267,18 +267,26 @@ chunkweaver is part of a retrieval quality toolkit:
 | **[ragprobe](https://github.com/metawake/ragprobe)** | Pre-deployment | Domain difficulty analysis — predicts *how hard retrieval will be* before you build |
 
 ```bash
-chunkweaver --recommend my_doc.txt        # what config to use
-chunkweaver my_doc.txt --preset legal-eu  # chunk it
-ragtune ingest ./chunks --pre-chunked     # embed + store
-ragtune simulate --queries golden.json    # measure retrieval
-ragprobe analyze --corpus ./docs          # how hard is this domain
+chunkweaver --recommend my_doc.txt              # what config to use
+chunkweaver my_doc.txt --preset legal-eu \
+    --export-dir ./chunks/                      # chunk → one .txt per chunk
+ragtune ingest ./chunks/ --pre-chunked          # embed + store
+ragtune simulate --queries golden.json          # measure retrieval
+ragprobe analyze --corpus ./docs                # how hard is this domain
 ```
+
+`--export-dir` writes ragtune-compatible files directly — no glue script needed.
+Use `--format json` with `--recommend` or `--inspect` for CI-friendly output.
 
 ## Known limitations
 
 - **Sentence detection** defaults to a simple regex (`[.!?]\s+(?=[A-Z"(])`). Abbreviations like "Dr. Smith" may cause false splits. For non-English or informal text, pass `sentence_pattern` — built-in alternatives: `SENTENCE_END_CJK`, `SENTENCE_END_PERMISSIVE`. See the [cookbook](docs/cookbook.md#cyrillic-accented-latin-and-other-non-english-scripts) for Cyrillic, Spanish, and other script-specific guidance.
 - **Boundaries are line-level** regex matches — they won't detect inline structural markers.
 - **No tokenizer awareness** — `target_size` is in characters, not tokens. For token budgets, estimate `tokens ≈ chars / 4`.
+
+## Author
+
+[Oleksii Alexapolsky](https://www.linkedin.com/in/alexey-a-181a614/) ([𝕏](https://x.com/thewake)) — building retrieval quality tools: [chunkweaver](https://github.com/metawake/chunkweaver), [ragtune](https://github.com/metawake/ragtune), [ragprobe](https://github.com/metawake/ragprobe).
 
 ## License
 
