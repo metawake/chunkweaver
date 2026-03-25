@@ -45,6 +45,13 @@ runs/
 # Experiment data (large files, not for distribution)
 experiments/10k_filings/
 
+# ML experiment artifacts
+examples/ml-detectors/**/model.joblib
+examples/ml-detectors/**/__pycache__/
+
 # Misc
 codealike.json
 chunkweaver.txt
+vision.md
+article-medium.md
+article-ocr-ml-detector.md
